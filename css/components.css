@@ -1,0 +1,32 @@
+/*
+  components.css — styles for the individual views in js/views/.
+
+  base.css handles the page layout; this file styles what each view renders
+  INSIDE its container. Use the CSS variables from base.css (var(--color-primary), etc.)
+  so everything stays consistent.
+*/
+
+/* TODO 1 (interest picker, js/views/interestPicker.js):
+   - Lay out the interest buttons in a row that wraps (hint: display: flex; flex-wrap: wrap; gap).
+   - Add a style for the currently selected interest (e.g. a class like .is-selected
+     with a different background or border). */
+
+/* TODO 2 (step sequence placeholder, js/core/sequence.js):
+   - Show the step names as a horizontal list.
+   - Highlight the current step. */
+
+/* TODO 3 (scenario, js/views/scenario.js):
+   - Make the story text comfortable to read (font size, max line width). */
+
+/* TODO 4 (formula, js/views/formula.js):
+   - KaTeX already styles the math itself. Just add spacing around the formula
+     and maybe a slightly larger font-size on its container (KaTeX scales with it). */
+
+/* TODO 5 (table, js/views/table.js):
+   - Give the table full width, collapsed borders, cell padding,
+     and a shaded header row. */
+
+/* TODO 6 (graph, js/views/graph.js):
+   - The graph's height is already set in base.css (.graph-surface).
+   - Style the short message graph.js shows when JSXGraph couldn't load
+     (e.g. muted color, centered text). */

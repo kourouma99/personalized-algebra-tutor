@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  index.html — the single page of the app.
+
+  It only provides EMPTY containers (the <section> elements below).
+  The JavaScript views in js/views/ fill these containers with content.
+  Each container has an id that a view looks up, for example:
+    #interest-picker  -> js/views/interestPicker.js
+    #scenario         -> js/views/scenario.js
+    #formula          -> js/views/formula.js
+    #table            -> js/views/table.js
+    #graph            -> js/views/graph.js
+    #number-line      -> js/views/graph.js
+
+  Libraries:
+    - KaTeX (math notation) is loaded from a CDN below. It creates a global `katex`
+      object, used ONLY by js/views/mathRender.js.
+    - JSXGraph (graphs and number lines) is loaded from a CDN below. It creates a global
+      `JXG` object, used ONLY by js/views/graph.js.
+
+  js/main.js is loaded as an ES module (type="module"), which lets it use import/export.
+  Modules are deferred automatically, so the HTML, KaTeX, and JSXGraph are ready before main.js runs.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personalized Algebra Tutor</title>
+
+  <!-- KaTeX styles and script (pinned version). Used only by js/views/mathRender.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+  <!-- JSXGraph styles and script (pinned version). Used only by js/views/graph.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.1/distrib/jsxgraph.css">
+  <script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.1/distrib/jsxgraphcore.js"></script>
+
+  <!-- Styles: base.css = page-wide basics, components.css = styles for individual views -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Personalized Algebra Tutor</h1>
+    <p class="subtitle">Learn math through a story about something you care about.</p>
+  </header>
+
+  <main class="container">
+    <!-- Step 1: the student chooses an interest -->
+    <section id="interest-picker" class="card" aria-label="Choose an interest"></section>
+
+    <!-- Placeholder for the step sequence (Explore → Notice → Represent → Solve → Explain → Transfer) -->
+    <section id="step-sequence" class="card" aria-label="Learning steps"></section>
+
+    <!-- The personalized story -->
+    <section id="scenario" class="card" aria-label="Scenario"></section>
+
+    <!-- The math representations. All are computed from the same params so they always agree. -->
+    <div class="representations">
+      <section id="formula" class="card" aria-label="Formula"></section>
+      <section id="table" class="card" aria-label="Table of values"></section>
+    </div>
+
+    <!-- graph.js draws the graph inside this div. It needs a fixed height (see .graph-surface in base.css). -->
+    <section id="graph" class="card" aria-label="Graph">
+      <div id="graph-surface" class="graph-surface"></div>
+    </section>
+
+    <!-- Hidden until a concept lists "number-line" in its representations (graph.js un-hides it). -->
+    <section id="number-line" class="card" aria-label="Number line" hidden>
+      <div id="number-line-surface" class="number-line-surface"></div>
+    </section>
+
+    <!-- Generates new params and re-renders everything (wired up in js/main.js) -->
+    <div class="actions">
+      <button id="new-scenario-btn" class="btn" type="button">New scenario</button>
+    </div>
+  </main>
+
+  <!-- Entry point of the app. type="module" enables import/export. -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

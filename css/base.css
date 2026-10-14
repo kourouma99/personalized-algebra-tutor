@@ -1,0 +1,131 @@
+/*
+  base.css — page-wide starter styles.
+
+  Defines colors as CSS variables, resets a few browser defaults, and sets up
+  the overall page layout (header, centered container, cards, buttons).
+  Styles for specific views (table, formula, interest buttons...) belong in
+  components.css instead.
+*/
+
+/* ---------- Design tokens (change these to restyle the whole app) ---------- */
+:root {
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-text: #1f2430;
+  --color-muted: #5f6b7a;
+  --color-border: #dfe3ea;
+  --color-primary: #3b5bdb;
+  --color-primary-dark: #2f49b0;
+
+  --radius: 10px;
+  --space: 16px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* ---------- Small reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+h1, h2, h3 {
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 24px var(--space);
+  text-align: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* ---------- Layout ---------- */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+}
+
+/* A "card" is a white box used for every section on the page */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space);
+}
+
+/* Hide cards that a view has not filled yet */
+.card:empty {
+  display: none;
+}
+
+/* Formula and table side by side on wide screens, stacked on phones */
+.representations {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space);
+}
+
+@media (min-width: 700px) {
+  .representations {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* JSXGraph draws at the size of its container element, so the container MUST have
+   a height, or the graph renders 0px tall (invisible). */
+.graph-surface {
+  width: 100%;
+  height: 360px;
+}
+
+.number-line-surface {
+  width: 100%;
+  height: 120px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  font: inherit;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
