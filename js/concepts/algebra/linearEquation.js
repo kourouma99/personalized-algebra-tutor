@@ -60,6 +60,12 @@
 */
 
 // The real module. Fill in the four methods by following the TODOs.
+function randomInt(min, max){
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export default {
   id: "linear-equation",
   subject: "algebra",
@@ -70,45 +76,73 @@ export default {
     interceptRange: [0, 50],
   },
 
-  generateParams() {
-    // TODO 1: Write a small helper (outside this object) randomInt(min, max)
-    //   that returns a whole number between min and max, inclusive
-    //   (hint: Math.random() and Math.floor()).
-    // TODO 2: Pick m from this.constraints.slopeRange.
-    //   Consider avoiding m = 0 (a flat line is a boring scenario); pick again if it happens.
-    // TODO 3: Pick b from this.constraints.interceptRange.
-    // TODO 4: Choose an x range for the table and graph, e.g. xMin = 0, xMax = 10.
-    // TODO 5: Return { m, b, xMin, xMax }.
+  
+    generateParams() {
+    const [mMin, mMax] = this.constraints.slopeRange;
+    const [bMin, bMax] = this.constraints.interceptRange;
+    const xMin = 0;
+    const xMax = 10;
+
+    let params;
+    do {
+      let m;
+      do {
+        m = randomInt(mMin, mMax);
+      } while (m === 0); // no flat lines
+
+      const b = randomInt(bMin, bMax);
+      params = { m, b, xMin, xMax };
+    } while (!this.validate(params).valid); // retry until it passes every rule
+
+    return params;
   },
 
   validate(params) {
-    // TODO 1: Create an empty `reasons` array.
-    // TODO 2: Check m is a whole number inside slopeRange; if not, push a helpful message.
-    // TODO 3: Check b is a whole number inside interceptRange; same idea.
-    // TODO 4: Check xMin < xMax.
-    // TODO 5 (think about it): mustBeLinear is automatically true for y = mx + b.
-    //   Can you think of a scenario-specific rule to add? For example,
-    //   "y should never be negative" if y represents a count of things.
-    // TODO 6: Return { valid: reasons.length === 0, reasons }.
+    const { m, b, xMin, xMax } = params;
+    const [mMin, mMax] = this.constraints.slopeRange;
+    const [bMin, bMax] = this.constraints.interceptRange;
+    const reasons = [];
+
+    if (!Number.isInteger(m) || m < mMin || m > mMax) {
+      reasons.push(`slope ${m} is outside [${mMin}, ${mMax}]`);
+    }
+    if (!Number.isInteger(b) || b < bMin || b > bMax) {
+      reasons.push(`intercept ${b} is outside [${bMin}, ${bMax}]`);
+    }
+    if (!(xMin < xMax)) {
+      reasons.push(`xMin (${xMin}) must be less than xMax (${xMax})`);
+    }
+    // Scenario rule: y is usually a count or amount, so it shouldn't go negative.
+    // For a line, the lowest y is always at one of the two ends.
+    const yAtStart = this.evaluate(params, xMin);
+    const yAtEnd = this.evaluate(params, xMax);
+    if (Math.min(yAtStart, yAtEnd) < 0) {
+      reasons.push(`y goes negative on [${xMin}, ${xMax}]`);
+    }
+
+    return { valid: reasons.length === 0, reasons };
   },
 
   evaluate(params, x) {
-    // TODO: Return y using y = m * x + b.
+    return params.m * x + params.b;
   },
 
   formulaText(params) {
-    // TODO 1: Build a string like "y = 3x + 12".
-    // TODO 2: Handle the tricky cases so it reads like a textbook:
-    //   m = 1  -> "y = x + 12"   (not "1x")
-    //   m = -1 -> "y = -x + 12"
-    //   b = 0  -> "y = 3x"       (not "+ 0")
-    //   (b can't be negative with the current constraints, but what would you do if it could?)
+    const { m, b } = params;
+
+    let mPart;
+    if (m === 1) mPart = "x";
+    else if (m === -1) mPart = "-x";
+    else mPart = `${m}x`;
+
+    let bPart = "";
+    if (b > 0) bPart = ` + ${b}`;
+    else if (b < 0) bPart = ` - ${Math.abs(b)}`; // "y = 3x - 5", not "+ -5"
+
+    return `y = ${mPart}${bPart}`;
   },
 
   formulaLatex(params) {
-    // TODO 1: For now you can simply return this.formulaText(params). For whole-number
-    //   slopes the plain text is already valid LaTeX.
-    // TODO 2 (later): If you ever allow fractional slopes, build "\\frac{p}{q}x" here
-    //   instead of a decimal like "0.5x".
+    return this.formulaText(params);
   },
 };
