@@ -10,12 +10,21 @@
   main.js reads and updates this state. Views receive it as an argument
   and should only READ it, never change it directly.
 */
+// TODO 1: the state object with starting values
+export const state = {
+  concept: null,   // the concept module (e.g. linear equation)
+  interest: null,  // e.g. "sports"
+  params: null,    // e.g. { m: 3, b: 12, xMin: 0, xMax: 10 }
+  step: 0,         // which learning step the student is on
+};
 
-// TODO 1: Create and export a `state` object with the four keys above.
-//   Use sensible starting values (null for concept/interest/params, 0 for step).
+// TODO 2: the only way to change state
+export function setState(changes) {
+  Object.assign(state, changes);
+  // console.log("state changed:", changes); // uncomment when debugging
+}
 
-// TODO 2: Export a function setState(changes) that copies the keys from `changes`
-//   into `state` (hint: Object.assign). Keeping all updates in one function makes it
-//   easy to add a console.log here later to watch every change while debugging.
-
-// TODO 3 (optional): Export a getState() function that returns the state object.
+// TODO 3: read the current state
+export function getState() {
+  return state;
+}
