@@ -56,10 +56,3 @@
 
 console.log("main.js loaded. Start with the TODOs!");
 
-
-
-import linear from "./concepts/algebra/linearEquation.js";
-const p = linear.generateParams();
-console.log(p, linear.formulaText(p), linear.validate(p));
-console.log(linear.formulaText({ m: 1, b: 0 }));   // "y = x"
-console.log(linear.formulaText({ m: -1, b: 7 }));  // "y = -x + 7"
