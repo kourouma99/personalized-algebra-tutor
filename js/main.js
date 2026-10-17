@@ -1,59 +1,75 @@
-/*
-  main.js — the entry point. index.html loads this file as an ES module.
+import { getConcept } from "./core/conceptRegistry.js";
+import { state, setState } from "./state.js";
+import { validateParams } from "./core/validator.js";
+import { renderSequence } from "./core/sequence.js";
+import { interests } from "./data/interests.js";
+import { getScenario } from "./data/sampleScenarios.js";
+import { renderInterestPicker } from "./views/interestPicker.js";
+import { renderScenario } from "./views/scenario.js";
+import { renderFormula } from "./views/formula.js";
+import { renderTable } from "./views/table.js";
+import { initGraphing, renderGraph, renderNumberLine } from "./views/graph.js";
 
-  It is the "conductor": it connects everything but contains no math and no HTML building.
-    - Gets concepts from core/conceptRegistry.js
-    - Stores the current situation in state.js
-    - Checks params with core/validator.js
-    - Calls each view in views/ to draw the page
+const MAX_ATTEMPTS = 100;
 
-  The key idea ("linked updates"):
-    something changes -> update state -> call refreshAll() -> every view re-renders
-  Because every view reads from the SAME state.params, the formula, table,
-  and graph can never disagree with each other.
-*/
+// Keep generating until the params pass every check (with a safety limit)
+function generateValidParams(concept) {
+  let lastReasons = [];
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const params = concept.generateParams();
+    const result = validateParams(concept, params);
+    if (result.valid) return params;
+    lastReasons = result.reasons;
+  }
+  throw new Error(`Could not generate valid params: ${lastReasons.join("; ")}`);
+}
 
-// TODO 1: Import what you need. For example:
-//   import { getConcept } from "./core/conceptRegistry.js";
-//   import { state, setState } from "./state.js";
-//   import { validateParams } from "./core/validator.js";
-//   import { interests } from "./data/interests.js";
-//   import { renderInterestPicker } from "./views/interestPicker.js";
-//   ...and the render functions from scenario.js, formula.js, table.js, and sequence.js,
-//   plus initGraphing, renderGraph, and renderNumberLine from graph.js.
-//   main.js never imports config.js or uses JSXGraph or KaTeX directly. Those belong to graph.js and mathRender.js.
+// Labels like { x: "Games played", y: "Total points" } for the current story
+function currentLabels() {
+  const { concept, interest, params } = state;
+  if (!concept || !interest || !params) return undefined;
+  const values = concept.storyValues ? concept.storyValues(params) : params;
+  return getScenario(concept.id, interest, values.variant)?.labels;
+}
 
-// TODO 2: Write a function generateValidParams(concept) that:
-//   a. calls concept.generateParams()
-//   b. passes the result to validateParams(concept, params)
-//   c. if not valid, tries again (use a max number of attempts so it can't loop forever)
-//   d. returns the valid params (or throws an error with the reasons if it never succeeds)
+// The heart of "linked updates": every view re-renders from the same state
+function refreshAll() {
+  const labels = currentLabels();
+  renderInterestPicker(interests, state.interest, onInterestChosen);
+  renderScenario(state);
+  renderFormula(state, labels);
+  renderTable(state, labels);
+  renderGraph(state, labels);
+  renderNumberLine(state, labels);
+  renderSequence(state);
+}
 
-// TODO 3: Write a function refreshAll() that calls every view's render function,
-//   passing it the current state (and the concept, if the view needs it).
-//   Order: scenario, formula, table, graph, number line, step sequence.
-//   renderGraph and renderNumberLine need the scenario's labels too (look them up once here).
-//   Do NOT do any math here; the views ask the concept for numbers.
+function newScenario() {
+  if (!state.concept) return;
+  try {
+    setState({ params: generateValidParams(state.concept) });
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+  refreshAll();
+}
 
-// TODO 4: Write a function newScenario() that:
-//   a. gets the current concept from state
-//   b. generates valid params (TODO 2)
-//   c. saves them with setState({ params })
-//   d. calls refreshAll()
+function onInterestChosen(interestId) {
+  setState({ interest: interestId });
+  newScenario();
+}
 
-// TODO 5: Write a function onInterestChosen(interestId) that:
-//   a. saves the interest with setState({ interest: interestId })
-//   b. calls newScenario()
+async function init() {
+  try {
+    await initGraphing();
+  } catch (err) {
+    console.warn("Graphing unavailable, continuing without graphs:", err.message);
+  }
 
-// TODO 6: Start the app (an async init() function you call at the bottom of this file):
-//   a. load the graphing library: `await initGraphing()` inside a try/catch.
-//      If it fails (e.g. the JSXGraph CDN didn't load), console.warn the error and keep going:
-//      the story, formula, and table should still work without a graph.
-//   b. choose the starting concept, e.g. getConcept("linear-equation"), and store it in state
-//   c. render the interest picker, giving it the interests list and onInterestChosen as a callback
-//   d. find the "New scenario" button (id="new-scenario-btn") and add a click listener that calls newScenario
-//   e. optionally pick a default interest so the page isn't empty at first
+  setState({ concept: getConcept("linear-equation") });
+  document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
+  onInterestChosen(interests[0].id); // start with the first interest so the page isn't empty
+}
 
-console.log("main.js loaded. Start with the TODOs!");
-
-
+init();
