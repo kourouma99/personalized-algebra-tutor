@@ -14,19 +14,49 @@
   Draws into #scenario in index.html.
 */
 
-// TODO 1: Import the sample scenario lookup function from ../data/sampleScenarios.js,
-//   and renderTextWithMath from ./mathRender.js.
+import { getScenario } from "../data/sampleScenarios.js";
+import { renderTextWithMath } from "./mathRender.js";
 
-// TODO 2: Write a helper fillPlaceholders(text, params) that replaces every "{key}"
-//   in the text with params[key].
-//   Hint: text.replace(/\{(\w+)\}/g, (match, key) => ...)
-//   If a key isn't in params, leave the placeholder as-is so you notice the mistake.
+// Replace every {key} with params[key]; leave unknown keys visible so mistakes show
+export function fillPlaceholders(text, params) {
+  return text.replace(/\{(\w+)\}/g, (match, key) =>
+    key in params ? String(params[key]) : match
+  );
+}
 
-// TODO 3: Export a function renderScenario(state) that:
-//   a. returns early (or shows a hint like "Pick an interest!") if state.interest or state.params is missing
-//   b. looks up the scenario for state.concept.id and state.interest
-//   c. finds the #scenario element and clears it
-//   d. shows the scenario title (plain text, use textContent)
-//   e. fills in the story with fillPlaceholders, then displays it with
-//      renderTextWithMath(element, filledStory) so any \( ... \) parts become math
-//   f. (optional) shows the question prompt the same way
+export function renderScenario(state) {
+  const container = document.getElementById("scenario");
+  if (!container) return;
+  container.textContent = "";
+
+  if (!state.interest || !state.params) {
+    container.textContent = "Pick an interest to start!";
+    return;
+  }
+
+  // Ask the concept for story values (e.g. absM) and which variant fits
+  const values = state.concept.storyValues
+    ? state.concept.storyValues(state.params)
+    : state.params;
+
+  const scenario = getScenario(state.concept.id, state.interest, values.variant);
+  if (!scenario) {
+    container.textContent = "No scenario found for this interest yet.";
+    return;
+  }
+
+  const title = document.createElement("h2");
+  title.textContent = scenario.title;
+
+  const story = document.createElement("p");
+  renderTextWithMath(story, fillPlaceholders(scenario.story, values));
+
+  container.append(title, story);
+
+  if (scenario.question) {
+    const question = document.createElement("p");
+    question.className = "scenario-question";
+    renderTextWithMath(question, fillPlaceholders(scenario.question, values));
+    container.appendChild(question);
+  }
+}

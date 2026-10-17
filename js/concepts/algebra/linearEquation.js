@@ -142,6 +142,15 @@ export default {
     return `y = ${mPart}${bPart}`;
   },
 
+    // Extra values for story placeholders, plus which story variant fits the numbers
+  storyValues(params) {
+    return {
+      ...params,
+      absM: Math.abs(params.m),
+      variant: params.m > 0 ? "increase" : "decrease",
+    };
+  },
+
   formulaLatex(params) {
     return this.formulaText(params);
   },
