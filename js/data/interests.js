@@ -9,9 +9,9 @@
   algebra, physics, and any future concept.
 */
 
-// TODO 1: Export an array `interests`. Each item is an object like:
-//   { id: "sports", label: "Sports", emoji: "⚽" }
-//
-// TODO 2: Add at least four: sports, music, gaming, animals.
-//   The `id` is what gets stored in state.interest, so keep ids short, lowercase,
-//   and never change them once scenarios use them.
+export const interests = [
+  { id: "sports", label: "Sports", emoji: "⚽" },
+  { id: "music", label: "Music", emoji: "🎵" },
+  { id: "gaming", label: "Gaming", emoji: "🎮" },
+  { id: "animals", label: "Animals", emoji: "🐾" },
+]
