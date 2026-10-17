@@ -3,6 +3,7 @@ Order of todos':
 a. state.js
 b. concepts/algebra/linearEquation.js
 c. views/mathRender.js
+
 d. views/formula.js
 e. views/table.js
 f. views/scenario.js

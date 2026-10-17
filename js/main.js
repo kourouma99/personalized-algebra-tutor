@@ -56,3 +56,9 @@
 
 console.log("main.js loaded. Start with the TODOs!");
 
+import { renderMath, renderTextWithMath } from "./views/mathRender.js";
+const t1 = document.createElement("div");
+const t2 = document.createElement("p");
+document.body.append(t1, t2);
+renderMath(t1, String.raw`y = \frac{1}{2}x + 3`, true);
+renderTextWithMath(t2, String.raw`You score \(4\) points per game, so after \(x\) games you have \(y = 4x\).`);
