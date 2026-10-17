@@ -74,3 +74,29 @@
   color: white;
   border-color: #3b5bdb;
 }
+
+
+
+
+
+
+.step-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  counter-reset: step;
+}
+.step-list li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+.step-list li.is-current {
+  background: #3b5bdb;
+  color: white;
+  font-weight: 600;
+}
