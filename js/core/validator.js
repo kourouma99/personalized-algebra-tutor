@@ -10,13 +10,25 @@
   This matters even more later, when an AI backend may suggest values.
 */
 
-// TODO 1: Export a function validateParams(concept, params) that returns
-//   { valid: boolean, reasons: string[] }.
+export function validateParams(concept, params) {
+  const reasons = [];
 
-// TODO 2: Inside it, add generic checks first, pushing a message into `reasons` for each failure:
-//   a. params exists and is an object
-//   b. every value in params is a finite number (hint: Object.values + Number.isFinite)
+  // Generic check: params must be an object
+  if (!params || typeof params !== "object") {
+    return { valid: false, reasons: ["params is missing or not an object"] };
+  }
 
-// TODO 3: Then call concept.validate(params) and merge its reasons into yours.
+  // Generic check: every value must be a real number (no NaN, Infinity, or text)
+  for (const [key, value] of Object.entries(params)) {
+    if (!Number.isFinite(value)) {
+      reasons.push(`${key} is not a finite number (got ${value})`);
+    }
+  }
 
-// TODO 4: Return { valid: reasons.length === 0, reasons }.
+  // Concept-specific rules (slope range, no negative y, etc.)
+  if (reasons.length === 0) {
+    reasons.push(...concept.validate(params).reasons);
+  }
+
+  return { valid: reasons.length === 0, reasons };
+}
