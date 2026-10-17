@@ -12,23 +12,55 @@
   Draws into #table in index.html.
 */
 
-// TODO 1: Export a function renderTable(state, labels).
-//   `labels` comes from the sample scenario, e.g. { x: "Games played", y: "Total points" }.
-//   (main.js looks them up and passes them in.)
+import { renderMath } from "./mathRender.js";
 
-// TODO 2: Write a helper makePoints(concept, params) that returns an array like
-//   [{ x: 0, y: 12 }, { x: 1, y: 15 }, ...] for x from params.xMin to params.xMax.
-//   Export it so graph.js can import and reuse it (graph.js draws these same points with JSXGraph).
-//   (Later you could move this into js/core/ since it's generic.)
+// Shared with graph.js so the table and graph always use the same points
+export function makePoints(concept, params, step = 1) {
+  const points = [];
+  for (let x = params.xMin; x <= params.xMax; x += step) {
+    points.push({ x, y: concept.evaluate(params, x) });
+  }
+  return points;
+}
 
-// TODO 3: Find the #table element, clear it, and build a <table>:
-//   a. a header row with labels.x and labels.y (with units if you have them)
-//   b. one row per point from makePoints
-//   Hint: document.createElement("table"), "tr", "th", "td".
+export function renderTable(state, labels) {
+  const container = document.getElementById("table");
+  if (!container) return;
+  container.textContent = "";
 
-// TODO 3b (optional): Show the variable symbols in the header with KaTeX, e.g.
-//   "Games played (x)" with x rendered by renderMath from ./mathRender.js.
-//   Plain numbers in the cells don't need KaTeX.
+  if (!state.concept || !state.params) return;
+  if (!state.concept.representations.includes("table")) return;
 
-// TODO 4 (think about it): With xMin=0, xMax=10 you get 11 rows. Is that too many?
-//   You could show every 2nd value, or add an `xStep` to the params.
+  const heading = document.createElement("h2");
+  heading.textContent = "Table";
+
+  const table = document.createElement("table");
+
+  // Header row: "Games played (x)" with x rendered by KaTeX
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  for (const v of ["x", "y"]) {
+    const th = document.createElement("th");
+    const name = labels?.[v] ?? v; // use the label if there is one
+    const symbol = document.createElement("span");
+    renderMath(symbol, v);
+    th.append(document.createTextNode(`${name} (`), symbol, document.createTextNode(")"));
+    headerRow.appendChild(th);
+  }
+  thead.appendChild(headerRow);
+
+  // One row per point
+  const tbody = document.createElement("tbody");
+  for (const { x, y } of makePoints(state.concept, state.params)) {
+    const row = document.createElement("tr");
+    const tdX = document.createElement("td");
+    const tdY = document.createElement("td");
+    tdX.textContent = x;
+    tdY.textContent = y;
+    row.append(tdX, tdY);
+    tbody.appendChild(row);
+  }
+
+  table.append(thead, tbody);
+  container.append(heading, table);
+}
