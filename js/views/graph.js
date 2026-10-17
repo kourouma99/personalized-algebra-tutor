@@ -49,13 +49,15 @@ import { makePoints } from "./table.js"; // put this next to the config import
 let graphBoard = null;
 let numberLineBoard = null;
 
-const boardOptions = {
-  axis: true,
-  showCopyright: false,
-  showNavigation: false,
-  pan: { enabled: false },  // no dragging: keeps students focused on the math
-  zoom: { enabled: false },
-};
+function boardOptionsFor(interactive) {
+  return {
+    axis: true,
+    showCopyright: false,
+    showNavigation: interactive,                         // zoom +/- buttons
+    pan: { enabled: interactive, needShift: false },     // drag without holding Shift
+    zoom: { enabled: interactive, wheel: true, needShift: false },
+  };
+}
 
 // Visible area around the data, with 10% padding: [left, top, right, bottom]
 function boundingBox(xs, ys) {
@@ -82,7 +84,7 @@ export function renderGraph(state, labels) {
 
   if (graphBoard) JXG.JSXGraph.freeBoard(graphBoard); // clear the old graph
   graphBoard = JXG.JSXGraph.initBoard("graph-surface", {
-    ...boardOptions,
+    ...boardOptionsFor(state.graphInteractive),
     boundingbox: [left, top, right, bottom],
   });
 
@@ -113,7 +115,7 @@ export function renderNumberLine(state, labels) {
 
   if (numberLineBoard) JXG.JSXGraph.freeBoard(numberLineBoard);
   numberLineBoard = JXG.JSXGraph.initBoard("number-line-surface", {
-    ...boardOptions,
+    ...boardOptionsFor(false),
     axis: false,
     boundingbox: [left, 1, right, -1],
   });

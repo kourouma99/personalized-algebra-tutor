@@ -69,7 +69,19 @@ async function init() {
 
   setState({ concept: getConcept("linear-equation") });
   document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
+  
+  const graphBtn = document.getElementById("graph-mode-btn");
+  graphBtn?.addEventListener("click", () => {
+    setState({ graphInteractive: !state.graphInteractive });
+    graphBtn.textContent = state.graphInteractive ? "Lock the graph" : "Explore the graph";
+    renderGraph(state, currentLabels());
+  });
+  
   onInterestChosen(interests[0].id); // start with the first interest so the page isn't empty
 }
 
 init();
+
+
+
+  
