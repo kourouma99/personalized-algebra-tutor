@@ -57,9 +57,3 @@
 console.log("main.js loaded. Start with the TODOs!");
 
 
-import { state, setState } from "./state.js";
-import linear from "./concepts/algebra/linearEquation.js";
-import { renderScenario } from "./views/scenario.js";
-
-setState({ concept: linear, interest: "gaming", params: linear.generateParams() });
-renderScenario(state);

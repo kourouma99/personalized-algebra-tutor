@@ -11,15 +11,23 @@
   Used by main.js to look up a concept by its id.
 */
 
-// TODO 1: Import the linear-equation concept:
-//   import linearEquation from "../concepts/algebra/linearEquation.js";
+import linearEquation from "../concepts/algebra/linearEquation.js";
 
-// TODO 2: Create an array `concepts` containing every imported concept.
+// Every available concept. To add one: import it above, then add it here.
+const concepts = [linearEquation];
 
-// TODO 3: Export a function getConcept(id) that returns the concept whose `id` matches,
-//   or throws a clear error if none is found (hint: Array.find).
+export function getConcept(id) {
+  const concept = concepts.find((c) => c.id === id);
+  if (!concept) {
+    throw new Error(`Unknown concept "${id}". Is it imported in conceptRegistry.js?`);
+  }
+  return concept;
+}
 
-// TODO 4: Export a function listConcepts() that returns the whole array
-//   (useful later for a concept picker).
+export function listConcepts() {
+  return concepts;
+}
 
-// TODO 5 (optional): Export listConceptsBySubject(subject) using Array.filter.
+export function listConceptsBySubject(subject) {
+  return concepts.filter((c) => c.subject === subject);
+}
