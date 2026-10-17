@@ -50,3 +50,27 @@
 #table tbody tr:hover {
   background: #e0e7ff; /* highlight the row under the mouse */
 }
+
+
+
+
+
+
+
+.interest-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.interest-buttons button {
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+}
+.interest-buttons button.is-selected {
+  background: #3b5bdb;
+  color: white;
+  border-color: #3b5bdb;
+}

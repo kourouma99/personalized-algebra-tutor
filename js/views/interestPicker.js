@@ -11,17 +11,30 @@
   Draws into #interest-picker in index.html.
 */
 
-// TODO 1: Export a function renderInterestPicker(interests, selectedId, onChoose).
+export function renderInterestPicker(interests, selectedId, onChoose) {
+  const container = document.getElementById("interest-picker");
+  if (!container) return;
+  container.textContent = ""; // same as innerHTML = "", but consistent with our safe-text habit
 
-// TODO 2: Find the #interest-picker element and clear it (element.innerHTML = "").
+  const heading = document.createElement("h2");
+  heading.textContent = "What are you into?";
+  container.appendChild(heading);
 
-// TODO 3: Add a heading, e.g. "What are you into?".
+  const buttons = document.createElement("div");
+  buttons.className = "interest-buttons";
 
-// TODO 4: For each interest, create a <button>:
-//   a. set its text (e.g. emoji + label from the interest object)
-//   b. if interest.id === selectedId, add a CSS class like "is-selected"
-//   c. add a click listener that calls onChoose(interest.id)
-//   d. append it to the container
+  for (const interest of interests) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `${interest.emoji} ${interest.label}`;
 
-// TODO 5 (think about it): When the student clicks, the selected style should update.
-//   Easiest approach: have main.js call renderInterestPicker again after the choice.
+    const isSelected = interest.id === selectedId;
+    if (isSelected) button.classList.add("is-selected");
+    button.setAttribute("aria-pressed", String(isSelected)); // screen readers announce "selected"
+
+    button.addEventListener("click", () => onChoose(interest.id));
+    buttons.appendChild(button);
+  }
+
+  container.appendChild(buttons);
+}
