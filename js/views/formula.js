@@ -11,23 +11,33 @@
   Draws into #formula in index.html.
 */
 
-// TODO 1: Import renderMath from ./mathRender.js.
+import { renderMath } from "./mathRender.js";
 
-// TODO 2: Export a function renderFormula(state).
+export function renderFormula(state, labels) {
+  const container = document.getElementById("formula");
+  if (!container) return;
+  container.textContent = ""; // clear old content
 
-// TODO 3: Return early if state.params is missing.
+  if (!state.concept || !state.params) return;
+  if (!state.concept.representations.includes("formula")) return;
 
-// TODO 4 (optional, generic check): If the concept's `representations` array
-//   doesn't include "formula", clear the container and return.
+  const heading = document.createElement("h2");
+  heading.textContent = "Formula";
 
-// TODO 5: Find the #formula element, clear it, and add:
-//   a. a heading, e.g. "Formula"
-//   b. an empty element (e.g. a <div>) for the math
-//   c. call renderMath(thatElement, state.concept.formulaLatex(state.params), true)
-//      (true = display mode: big and centered)
-//   d. set thatElement's aria-label to state.concept.formulaText(state.params)
-//      so screen readers read a clean "y = 3x + 12"
+  const mathEl = document.createElement("div");
+  renderMath(mathEl, state.concept.formulaLatex(state.params), true);
+  mathEl.setAttribute("aria-label", state.concept.formulaText(state.params));
 
-// TODO 6 (stretch): Also show what the variables mean, using the labels from the
-//   sample scenario (e.g. "x = games played, y = total points"). Render the
-//   variable names with renderMath too, so they look the same as in the formula.
+  container.append(heading, mathEl);
+
+  // Stretch: explain the variables, e.g. "x = games played"
+  if (labels) {
+    for (const [variable, meaning] of Object.entries(labels)) {
+      const line = document.createElement("p");
+      const v = document.createElement("span");
+      renderMath(v, variable);
+      line.append(v, document.createTextNode(` = ${meaning}`));
+      container.appendChild(line);
+    }
+  }
+}
