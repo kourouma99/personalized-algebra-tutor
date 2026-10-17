@@ -30,3 +30,23 @@
    - The graph's height is already set in base.css (.graph-surface).
    - Style the short message graph.js shows when JSXGraph couldn't load
      (e.g. muted color, centered text). */
+
+
+
+     #table table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 360px;
+}
+#table th,
+#table td {
+  padding: 6px 12px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+#table tbody tr:nth-child(even) {
+  background: #f3f4f6; /* zebra stripes guide the eye across each row */
+}
+#table tbody tr:hover {
+  background: #e0e7ff; /* highlight the row under the mouse */
+}

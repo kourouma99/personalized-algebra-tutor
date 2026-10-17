@@ -57,9 +57,3 @@
 console.log("main.js loaded. Start with the TODOs!");
 
 
-import { state, setState } from "./state.js";
-import linear from "./concepts/algebra/linearEquation.js";
-import { renderTable } from "./views/table.js";
-
-setState({ concept: linear, params: linear.generateParams() });
-renderTable(state, { x: "Games played", y: "Total points" });
