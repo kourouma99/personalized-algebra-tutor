@@ -88,8 +88,18 @@ export function renderGraph(state, labels) {
     boundingbox: [left, top, right, bottom],
   });
 
-  // The line, drawn from OUR computed points, not from an equation
-  graphBoard.create("curve", [xs, ys], { strokeWidth: 2 });
+  // Smooth line: sample many x values between the table points. Still computed by
+  // OUR evaluate(), not by JSXGraph from an equation.
+  const { xMin, xMax } = state.params;
+  const steps = 100;
+  const curveXs = [];
+  const curveYs = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + ((xMax - xMin) * i) / steps;
+    curveXs.push(x);
+    curveYs.push(state.concept.evaluate(state.params, x));
+  }
+  graphBoard.create("curve", [curveXs, curveYs], { strokeWidth: 2 });
 
   for (const p of points) {
     graphBoard.create("point", [p.x, p.y], { fixed: true, name: "", size: 2 });
