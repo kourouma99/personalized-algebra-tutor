@@ -30,10 +30,12 @@ export default {
     const { startMultiple, startRange } = this.constraints;
     const xMin = 0, xMax = 5; // exponentials grow fast, so we use a shorter range than linear
 
+    // Choose b once, so retries don't tilt the 50/50 growth/decay split
+    const b = Math.random() < 0.5 ? pick(GROWTH_FACTORS) : pick(DECAY_FACTORS);
+
     let params;
     do {
       const a = startMultiple * randomInt(startRange[0] / startMultiple, startRange[1] / startMultiple);
-      const b = Math.random() < 0.5 ? pick(GROWTH_FACTORS) : pick(DECAY_FACTORS); // 50/50 growth or decay
       params = { a, b, xMin, xMax };
     } while (!this.validate(params).valid);
 

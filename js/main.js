@@ -67,7 +67,7 @@ async function init() {
     console.warn("Graphing unavailable, continuing without graphs:", err.message);
   }
 
-  setState({ concept: getConcept("exponential") }); // TEMP: testing exponential, change back to "linear-equation"
+  setState({ concept: getConcept("linear-equation") });
   document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
   
   const graphBtn = document.getElementById("graph-mode-btn");
