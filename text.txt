@@ -1,10 +1,7 @@
-Order of todos':
+1. Show your teacher. A live demo is the best way to get feedback before building more.
 
-a. state.js
-b. concepts/algebra/linearEquation.js
-c. views/mathRender.js
+2. Make the steps real. Notice, Solve, and Explain become actual activities, like having the student answer the prediction question and checking it.
 
-d. views/formula.js
-e. views/table.js
-f. views/scenario.js
-g. views/graph.js (last)
+3. Review the Blackboard course to pick the next concepts.
+
+4. Start the AI backend to replace the sample scenarios.

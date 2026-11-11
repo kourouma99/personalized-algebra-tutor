@@ -80,6 +80,24 @@ export const sampleScenarios = {
       },
     },
   },
+  "exponential": {
+    gaming: {
+      increase: {
+        title: "Viral Clip",
+        story: "Your gaming clip has \\({a}\\) views on the day you post it. Each day, the number of views is multiplied by \\({b}\\). After \\(x\\) days, it has \\(y\\) views.",
+        question: "How many views will the clip have after 4 days?",
+        labels: { x: "Days since posting", y: "Views" },
+        units: { x: "days", y: "views" },
+      },
+      decrease: {
+        title: "Fading Shield",
+        story: "Your character's shield starts at \\({a}\\) points. Every minute in the storm, the shield loses half its strength. After \\(x\\) minutes, \\(y\\) shield points are left.",
+        question: "How many shield points will be left after 3 minutes?",
+        labels: { x: "Minutes in storm", y: "Shield points" },
+        units: { x: "minutes", y: "points" },
+      },
+    },
+  },
 };
 
 // Returns the scenario for a concept + interest (+ variant, if the scenario has variants)

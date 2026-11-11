@@ -12,9 +12,10 @@
 */
 
 import linearEquation from "../concepts/algebra/linearEquation.js";
+import exponential from "../concepts/algebra/exponential.js";
 
 // Every available concept. To add one: import it above, then add it here.
-const concepts = [linearEquation];
+const concepts = [linearEquation, exponential];
 
 export function getConcept(id) {
   const concept = concepts.find((c) => c.id === id);
