@@ -149,8 +149,80 @@ export const sampleScenarios = {
         units: { x: "periods", y: "milligrams" },
       },
     },
-    
+
   },
+
+  "quadratic": {
+    sports: {
+      max: {
+        title: "The Big Punt",
+        story: "A football is punted from \\({yStart}\\) feet off the ground. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) seconds, and is back at \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, the ball is \\(y\\) feet high.",
+        question: "How high is the ball after 1 second?",
+        labels: { x: "Seconds since kick", y: "Height (feet)" },
+        units: { x: "seconds", y: "feet" },
+      },
+      min: {
+        title: "Halfpipe Run",
+        story: "A skater drops in from \\({yStart}\\) feet up a halfpipe. They reach the lowest point, \\({k}\\) feet, after \\({h}\\) seconds, and are back at \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, the skater is \\(y\\) feet high.",
+        question: "How high is the skater after 1 second?",
+        labels: { x: "Seconds", y: "Height (feet)" },
+        units: { x: "seconds", y: "feet" },
+      },
+    },
+
+    music: {
+      max: {
+        title: "Encore Cheer",
+        story: "During the encore, the crowd's cheer starts at \\({yStart}\\) decibels above normal, peaks at \\({k}\\) after \\({h}\\) minutes, and fades back to \\({yStart}\\) after \\({xEnd}\\) minutes. After \\(x\\) minutes, it is \\(y\\) decibels above normal.",
+        question: "How loud is the cheer after 1 minute?",
+        labels: { x: "Minutes into encore", y: "Decibels above normal" },
+        units: { x: "minutes", y: "decibels" },
+      },
+      min: {
+        title: "The Drop",
+        story: "A DJ starts a song at volume \\({yStart}\\), lowers it to \\({k}\\) at second \\({h}\\), then brings it back to \\({yStart}\\) by second \\({xEnd}\\). After \\(x\\) seconds, the volume is \\(y\\).",
+        question: "What is the volume after 1 second?",
+        labels: { x: "Seconds", y: "Volume" },
+        units: { x: "seconds", y: "volume units" },
+      },
+    },
+
+    gaming: {
+      max: {
+        title: "Ledge Jump",
+        story: "Your character jumps from a ledge \\({yStart}\\) blocks high. They reach their highest point, \\({k}\\) blocks, after \\({h}\\) ticks, and land on a matching ledge after \\({xEnd}\\) ticks. After \\(x\\) ticks, the character is \\(y\\) blocks high.",
+        question: "How high is the character after 1 tick?",
+        labels: { x: "Ticks since jump", y: "Height (blocks)" },
+        units: { x: "ticks", y: "blocks" },
+      },
+      min: {
+        title: "Minecart Dip",
+        story: "Your minecart starts \\({yStart}\\) blocks high, dips to its lowest point, \\({k}\\) blocks, after \\({h}\\) seconds, and climbs back to \\({yStart}\\) blocks after \\({xEnd}\\) seconds. After \\(x\\) seconds, it is \\(y\\) blocks high.",
+        question: "How high is the minecart after 1 second?",
+        labels: { x: "Seconds", y: "Height (blocks)" },
+        units: { x: "seconds", y: "blocks" },
+      },
+    },
+
+    animals: {
+      max: {
+        title: "Dolphin Leap",
+        story: "A dolphin leaps from \\({yStart}\\) feet above the water line. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) tenths of a second, and is back at \\({yStart}\\) feet after \\({xEnd}\\). After \\(x\\) tenths of a second, it is \\(y\\) feet high.",
+        question: "How high is the dolphin after 1 tenth of a second?",
+        labels: { x: "Tenths of a second", y: "Height (feet)" },
+        units: { x: "tenths of a second", y: "feet" },
+      },
+      min: {
+        title: "Pelican Dive",
+        story: "A pelican flies \\({yStart}\\) feet above the water, swoops down to its lowest point, \\({k}\\) feet, after \\({h}\\) seconds, and climbs back to \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, it is \\(y\\) feet high.",
+        question: "How high is the pelican after 1 second?",
+        labels: { x: "Seconds", y: "Height (feet)" },
+        units: { x: "seconds", y: "feet" },
+      },
+    },
+  },
+
+
 };
 
 // Returns the scenario for a concept + interest (+ variant, if the scenario has variants)
