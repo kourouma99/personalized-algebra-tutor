@@ -80,6 +80,7 @@ export const sampleScenarios = {
       },
     },
   },
+
   "exponential": {
     gaming: {
       increase: {
@@ -95,6 +96,23 @@ export const sampleScenarios = {
         question: "How many shield points will be left after 3 minutes?",
         labels: { x: "Minutes in storm", y: "Shield points" },
         units: { x: "minutes", y: "points" },
+      },
+    },
+
+    music: {
+      increase: {
+        title: "The Weekly Song Streams",
+        story: "Your new song gets \\({a}\\) streams in its release week. Each week after that, the number of streams is multiplied by \\({b}\\). After \\(x\\) weeks, the song gets \\(y\\) streams that week.",
+        question: "How many streams will the song get 4 weeks after release?",
+        labels: { x: "Weeks since release", y: "Streams that week" },
+        units: { x: "weeks", y: "streams" },
+      },
+      decrease: {
+        title: "Selling Out",
+        story: "Your concert has \\({a}\\) tickets left when sales open. Each day, half of the remaining tickets sell. After \\(x\\) days, \\(y\\) tickets are left.",
+        question: "How many tickets will be left after 3 days?",
+        labels: { x: "Days since sales opened", y: "Tickets left" },
+        units: { x: "days", y: "tickets" },
       },
     },
   },

@@ -68,6 +68,8 @@ async function init() {
   }
 
   setState({ concept: getConcept("linear-equation") });
+  // setState({ concept: getConcept("exponential") });
+
   document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
   
   const graphBtn = document.getElementById("graph-mode-btn");
