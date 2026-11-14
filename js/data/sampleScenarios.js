@@ -115,6 +115,41 @@ export const sampleScenarios = {
         units: { x: "days", y: "tickets" },
       },
     },
+
+    sports: {
+      increase: {
+        title: "Highlight Reel",
+        story: "Your game-winning shot gets \\({a}\\) views on the first day. Each day after that, the views are multiplied by \\({b}\\). After \\(x\\) days, it gets \\(y\\) views that day.",
+        question: "How many views will it get 4 days after posting?",
+        labels: { x: "Days since posting", y: "Views that day" },
+        units: { x: "days", y: "views" },
+      },
+      decrease: {
+        title: "Tournament Bracket",
+        story: "A tournament starts with \\({a}\\) teams. After each round, half of the teams are eliminated. After \\(x\\) rounds, \\(y\\) teams are left.",
+        question: "How many teams will be left after 3 rounds?",
+        labels: { x: "Rounds played", y: "Teams left" },
+        units: { x: "rounds", y: "teams" },
+      },
+    },
+
+    animals: {
+      increase: {
+        title: "Rabbit Population",
+        story: "A field has \\({a}\\) rabbits this year. Each year, the population is multiplied by \\({b}\\). After \\(x\\) years, there are \\(y\\) rabbits.",
+        question: "How many rabbits will there be after 4 years?",
+        labels: { x: "Years", y: "Rabbits" },
+        units: { x: "years", y: "rabbits" },
+      },
+      decrease: {
+        title: "Pet Medicine",
+        story: "A vet gives a dog \\({a}\\) milligrams of medicine. Every 6 hours, half of it leaves the dog's body. After \\(x\\) six-hour periods, \\(y\\) milligrams are left.",
+        question: "How much medicine is left after 3 periods?",
+        labels: { x: "Six-hour periods", y: "Medicine left (mg)" },
+        units: { x: "periods", y: "milligrams" },
+      },
+    },
+    
   },
 };
 
