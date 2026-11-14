@@ -16,6 +16,7 @@ function pick(list) {
 
 export default {
   id: "exponential",
+  name: "Exponential",
   subject: "algebra",
   representations: ["formula", "table", "graph", "verbal"],
   constraints: {

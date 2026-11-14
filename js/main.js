@@ -1,4 +1,4 @@
-import { getConcept } from "./core/conceptRegistry.js";
+// import { getConcept } from "./core/conceptRegistry.js";
 import { state, setState } from "./state.js";
 import { validateParams } from "./core/validator.js";
 import { renderSequence } from "./core/sequence.js";
@@ -9,6 +9,10 @@ import { renderScenario } from "./views/scenario.js";
 import { renderFormula } from "./views/formula.js";
 import { renderTable } from "./views/table.js";
 import { initGraphing, renderGraph, renderNumberLine } from "./views/graph.js";
+
+import { renderConceptPicker } from "./views/conceptPicker.js";
+import { getConcept, listConcepts } from "./core/conceptRegistry.js";
+
 
 const MAX_ATTEMPTS = 100;
 
@@ -35,6 +39,7 @@ function currentLabels() {
 // The heart of "linked updates": every view re-renders from the same state
 function refreshAll() {
   const labels = currentLabels();
+  renderConceptPicker(listConcepts(), state.concept?.id, onConceptChosen);
   renderInterestPicker(interests, state.interest, onInterestChosen);
   renderScenario(state);
   renderFormula(state, labels);
@@ -60,6 +65,11 @@ function onInterestChosen(interestId) {
   newScenario();
 }
 
+function onConceptChosen(conceptId) {
+  setState({ concept: getConcept(conceptId) });
+  newScenario();
+}
+
 async function init() {
   try {
     await initGraphing();
@@ -67,8 +77,8 @@ async function init() {
     console.warn("Graphing unavailable, continuing without graphs:", err.message);
   }
 
-  setState({ concept: getConcept("linear-equation") });
-  // setState({ concept: getConcept("exponential") });
+  // setState({ concept: getConcept("linear-equation") });
+  setState({ concept: getConcept("exponential") });
 
   document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
   

@@ -68,6 +68,7 @@ function randomInt(min, max){
 
 export default {
   id: "linear-equation",
+  name: "Linear",
   subject: "algebra",
   representations: ["formula", "table", "graph", "verbal"],
   constraints: {
