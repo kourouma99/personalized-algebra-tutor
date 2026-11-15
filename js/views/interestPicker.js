@@ -11,7 +11,7 @@
   Draws into #interest-picker in index.html.
 */
 
-export function renderInterestPicker(interests, selectedId, onChoose) {
+export function renderInterestPicker(interests, selectedId, onChoose, onCustom) {
   const container = document.getElementById("interest-picker");
   if (!container) return;
   container.textContent = ""; // same as innerHTML = "", but consistent with our safe-text habit
@@ -37,4 +37,34 @@ export function renderInterestPicker(interests, selectedId, onChoose) {
   }
 
   container.appendChild(buttons);
+
+
+
+  // Free-text interest: later, the AI writes a story for whatever the student types
+  const form = document.createElement("form");
+  form.className = "custom-interest";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Or type your own interest (e.g. cooking)";
+  input.maxLength = 40;
+
+  input.setAttribute("aria-label", "Your own interest"); // Invisible on screen
+
+    // Keep the typed interest in the box after the page redraws
+  const isCustom = selectedId && !interests.some((i) => i.id === selectedId);
+  if (isCustom) input.value = selectedId;
+
+
+  const go = document.createElement("button");
+  go.type = "submit";
+  go.textContent = "Go";
+
+  form.append(input, go);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault(); // stops the page from reloading
+    const text = input.value.trim();
+    if (text && onCustom) onCustom(text);
+  });
+  container.appendChild(form);
 }

@@ -40,7 +40,7 @@ function currentLabels() {
 function refreshAll() {
   const labels = currentLabels();
   renderConceptPicker(listConcepts(), state.concept?.id, onConceptChosen);
-  renderInterestPicker(interests, state.interest, onInterestChosen);
+  renderInterestPicker(interests, state.interest, onInterestChosen, onCustomInterest);
   renderScenario(state);
   renderFormula(state, labels);
   renderTable(state, labels);
@@ -67,6 +67,11 @@ function onInterestChosen(interestId) {
 
 function onConceptChosen(conceptId) {
   setState({ concept: getConcept(conceptId) });
+  newScenario();
+}
+
+function onCustomInterest(text) {
+  setState({ interest: text });
   newScenario();
 }
 

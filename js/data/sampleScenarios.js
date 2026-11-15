@@ -231,3 +231,4 @@ export function getScenario(conceptId, interestId, variant) {
   if (!scenario) return null;
   return variant && scenario[variant] ? scenario[variant] : scenario;
 }
+
