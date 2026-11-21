@@ -129,6 +129,8 @@ export default {
     const units = scenario?.units ?? { x: "steps", y: "units" };
     const X = lower(labels.x);
     const Y = lower(labels.y);
+    // "games played (x)" with a story, just "x" without one (e.g. a typed-in interest)
+    const named = (label, v) => (scenario ? `${label} (\\(${v}\\))` : `\\(${v}\\)`);
 
     // The x for the Solve question is chosen by code, inside the concept's range
     const solveChoices = SOLVE_XS.filter((x) => x >= params.xMin && x <= params.xMax);
@@ -143,7 +145,7 @@ export default {
       items: [
         choiceItem({
           id: "explore-predict",
-          prompt: `As ${X} (\\(x\\)) increases, ${Y} (\\(y\\)) will…`,
+          prompt: `As ${named(X, "x")} increases, ${named(Y, "y")} will…`,
           options: [
             { key: "up", text: "go up" },
             { key: "down", text: "go down" },
