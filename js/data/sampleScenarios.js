@@ -11,6 +11,9 @@
   Organized by concept id, then interest id, so other concepts can add their
   own scenarios here later (e.g. "constant-velocity").
   Interest ids must match data/interests.js.
+
+  Linear questions use {qx}: the guided flow (flows/linearFlow.js) picks that
+  x in code, so the answer is never already in the student's table.
 */
 
 export const sampleScenarios = {
@@ -19,14 +22,14 @@ export const sampleScenarios = {
       increase: {
         title: "Season Scoring",
         story: "Your team starts the season with \\({b}\\) bonus points. Every game, you score \\({absM}\\) more points. After \\(x\\) games, your total is \\(y\\) points.",
-        question: "How many points will your team have after 8 games?",
+        question: "How many points will your team have after {qx} games?",
         labels: { x: "Games played", y: "Total points" },
         units: { x: "games", y: "points" },
       },
       decrease: {
         title: "Practice Balls",
         story: "Your team begins the season with \\({b}\\) practice balls. Every game, \\({absM}\\) balls get lost or worn out. After \\(x\\) games, you have \\(y\\) balls left.",
-        question: "How many balls will be left after 8 games?",
+        question: "How many balls will be left after {qx} games?",
         labels: { x: "Games played", y: "Balls left" },
         units: { x: "games", y: "balls" },
       },
@@ -35,14 +38,14 @@ export const sampleScenarios = {
       increase: {
         title: "Growing Playlist",
         story: "Your playlist already has \\({b}\\) songs. Every week, you add \\({absM}\\) new songs. After \\(x\\) weeks, it has \\(y\\) songs.",
-        question: "How many songs will be in your playlist after 8 weeks?",
+        question: "How many songs will be in your playlist after {qx} weeks?",
         labels: { x: "Weeks", y: "Songs in playlist" },
         units: { x: "weeks", y: "songs" },
       },
       decrease: {
         title: "Studio Time",
         story: "You booked \\({b}\\) hours of studio time. Each day of recording uses \\({absM}\\) hours. After \\(x\\) days, you have \\(y\\) hours left.",
-        question: "How many hours will be left after 8 days?",
+        question: "How many hours will be left after {qx} days?",
         labels: { x: "Days recording", y: "Hours left" },
         units: { x: "days", y: "hours" },
       },
@@ -51,14 +54,14 @@ export const sampleScenarios = {
       increase: {
         title: "Coin Collector",
         story: "You start a level with \\({b}\\) coins and earn \\({absM}\\) coins every minute. After \\(x\\) minutes, you have \\(y\\) coins.",
-        question: "How many coins will you have after 8 minutes?",
+        question: "How many coins will you have after {qx} minutes?",
         labels: { x: "Minutes played", y: "Coins" },
         units: { x: "minutes", y: "coins" },
       },
       decrease: {
         title: "Health Bar",
         story: "Your character starts with \\({b}\\) health points and loses \\({absM}\\) every minute in the storm. After \\(x\\) minutes, \\(y\\) health points are left.",
-        question: "How much health will be left after 8 minutes?",
+        question: "How much health will be left after {qx} minutes?",
         labels: { x: "Minutes in storm", y: "Health left" },
         units: { x: "minutes", y: "health points" },
       },
@@ -67,14 +70,14 @@ export const sampleScenarios = {
       increase: {
         title: "Shelter Adoptions",
         story: "An animal shelter has already found homes for \\({b}\\) animals. Each week, \\({absM}\\) more are adopted. After \\(x\\) weeks, \\(y\\) animals have homes.",
-        question: "How many animals will have homes after 8 weeks?",
+        question: "How many animals will have homes after {qx} weeks?",
         labels: { x: "Weeks", y: "Animals adopted" },
         units: { x: "weeks", y: "animals" },
       },
       decrease: {
         title: "Bird Feeder",
         story: "A bird feeder holds \\({b}\\) ounces of seed. Birds eat \\({absM}\\) ounces each day. After \\(x\\) days, \\(y\\) ounces are left.",
-        question: "How much seed will be left after 8 days?",
+        question: "How much seed will be left after {qx} days?",
         labels: { x: "Days", y: "Ounces of seed left" },
         units: { x: "days", y: "ounces" },
       },

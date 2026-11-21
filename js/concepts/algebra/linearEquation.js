@@ -59,6 +59,9 @@
   };
 */
 
+// The guided worksheet for this concept. It lives in js/flows/ so this file stays math-only.
+import linearFlow from "../../flows/linearFlow.js";
+
 // The real module. Fill in the four methods by following the TODOs.
 function randomInt(min, max){
   min = Math.ceil(min);
@@ -70,6 +73,7 @@ export default {
   id: "linear-equation",
   name: "Linear",
   subject: "algebra",
+  flow: linearFlow, // main.js uses the guided step-by-step page when a concept has a flow
   representations: ["formula", "table", "graph", "verbal"],
   constraints: {
     mustBeLinear: true,
