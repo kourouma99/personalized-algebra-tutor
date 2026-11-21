@@ -16,6 +16,8 @@ export const state = {
   interest: null,  // e.g. "sports"
   params: null,    // e.g. { m: 3, b: 12, xMin: 0, xMax: 10 }
   step: 0,         // which learning step the student is on
+  flowRun: null,   // guided flow for this scenario (see core/flowEngine.js), or null
+  responses: [],   // log of every answer: { step, item, answer, correct, attempts, revealed, time }
 };
 
 // TODO 2: the only way to change state

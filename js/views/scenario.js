@@ -24,7 +24,8 @@ export function fillPlaceholders(text, params) {
   );
 }
 
-export function renderScenario(state) {
+// showQuestion: false hides the story's question (the guided flow asks it later, in Solve)
+export function renderScenario(state, { showQuestion = true } = {}) {
   const container = document.getElementById("scenario");
   if (!container) return;
   container.textContent = "";
@@ -53,7 +54,7 @@ export function renderScenario(state) {
 
   container.append(title, story);
 
-  if (scenario.question) {
+  if (scenario.question && showQuestion) {
     const question = document.createElement("p");
     question.className = "scenario-question";
     renderTextWithMath(question, fillPlaceholders(scenario.question, values));

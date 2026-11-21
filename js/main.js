@@ -1,7 +1,8 @@
 // import { getConcept } from "./core/conceptRegistry.js";
 import { state, setState } from "./state.js";
 import { validateParams } from "./core/validator.js";
-import { renderSequence } from "./core/sequence.js";
+import { renderSequence, nextStep, previousStep } from "./core/sequence.js";
+import { createRun, submitAnswer, isStepComplete, visibleRepresentations } from "./core/flowEngine.js";
 import { interests } from "./data/interests.js";
 import { getScenario } from "./data/sampleScenarios.js";
 import { renderInterestPicker } from "./views/interestPicker.js";
@@ -11,6 +12,7 @@ import { renderTable } from "./views/table.js";
 import { initGraphing, renderGraph, renderNumberLine } from "./views/graph.js";
 
 import { renderConceptPicker } from "./views/conceptPicker.js";
+import { renderFlow } from "./views/flowView.js";
 import { getConcept, listConcepts } from "./core/conceptRegistry.js";
 
 
@@ -36,17 +38,97 @@ function currentLabels() {
   return getScenario(concept.id, interest, values.variant)?.labels;
 }
 
+// Show or hide a section of index.html
+function setVisible(id, visible) {
+  const section = document.getElementById(id);
+  if (section) section.hidden = !visible;
+}
+
 // The heart of "linked updates": every view re-renders from the same state
 function refreshAll() {
-  const labels = currentLabels();
   renderConceptPicker(listConcepts(), state.concept?.id, onConceptChosen);
   renderInterestPicker(interests, state.interest, onInterestChosen, onCustomInterest);
+  renderSequence(state);
+
+  if (state.flowRun) refreshFlow();
+  else refreshAllAtOnce();
+}
+
+// Concepts without a flow (exponential, quadratic): everything at once, as before
+function refreshAllAtOnce() {
+  const labels = currentLabels();
+  for (const id of ["scenario", "representations", "formula", "table", "graph"]) setVisible(id, true);
+  setVisible("flow", false);
   renderScenario(state);
   renderFormula(state, labels);
   renderTable(state, labels);
   renderGraph(state, labels);
   renderNumberLine(state, labels);
-  renderSequence(state);
+}
+
+// Concepts with a flow (linear): show only what the current step allows
+function refreshFlow() {
+  const labels = currentLabels();
+  const shown = visibleRepresentations(state.flowRun, state.step);
+  const has = (name) => shown.includes(name);
+
+  // Un-hide BEFORE drawing: JSXGraph cannot draw into a hidden element
+  setVisible("scenario", has("story"));
+  setVisible("formula", has("formula"));
+  setVisible("table", false); // the full table would give away the answers
+  setVisible("representations", has("formula"));
+  setVisible("graph", has("graph"));
+  setVisible("number-line", false);
+  setVisible("flow", true);
+
+  if (has("story")) renderScenario(state, { showQuestion: false }); // asked later, in Solve
+  if (has("formula")) renderFormula(state, labels);
+  if (has("graph")) renderGraph(state, labels);
+  renderFlow(state, { onAnswer, onAnswers, onNext, onBack });
+}
+
+// Build a fresh worksheet for the current params (or clear it for concepts without a flow)
+function startFlow() {
+  const { concept, params, interest } = state;
+  if (!concept.flow) {
+    setState({ flowRun: null, step: 0 });
+    return;
+  }
+  const values = concept.storyValues ? concept.storyValues(params) : params;
+  const scenario = getScenario(concept.id, interest, values.variant);
+  setState({ flowRun: createRun(concept.flow, concept, params, { scenario, values }), step: 0 });
+}
+
+// Check one answer and keep it in the log (future research data)
+function recordAnswer(itemId, answer) {
+  const { entry } = submitAnswer(state.flowRun, state.step, itemId, answer);
+  if (entry) {
+    state.responses.push(entry);
+    console.log("response:", entry);
+  }
+}
+
+function onAnswer(itemId, answer) {
+  recordAnswer(itemId, answer);
+  refreshAll();
+}
+
+// Several answers at once (e.g. a table with one Check button)
+function onAnswers(pairs) {
+  for (const [itemId, answer] of pairs) recordAnswer(itemId, answer);
+  refreshAll();
+}
+
+function onNext() {
+  if (!isStepComplete(state.flowRun, state.step)) return;
+  setState({ step: nextStep(state.step) });
+  refreshAll();
+  document.getElementById("step-sequence")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function onBack() {
+  setState({ step: previousStep(state.step) });
+  refreshAll();
 }
 
 function newScenario() {
@@ -57,6 +139,7 @@ function newScenario() {
     console.error(err);
     return;
   }
+  startFlow(); // a new scenario (or concept, or interest) always starts again at step 1
   refreshAll();
 }
 
@@ -82,8 +165,7 @@ async function init() {
     console.warn("Graphing unavailable, continuing without graphs:", err.message);
   }
 
-  // setState({ concept: getConcept("linear-equation") });
-  setState({ concept: getConcept("exponential") });
+  setState({ concept: getConcept("linear-equation") }); // opens on the guided linear flow
 
   document.getElementById("new-scenario-btn")?.addEventListener("click", newScenario);
   

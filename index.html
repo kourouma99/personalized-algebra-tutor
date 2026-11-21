@@ -11,6 +11,7 @@
     #table            -> js/views/table.js
     #graph            -> js/views/graph.js
     #number-line      -> js/views/graph.js
+    #flow             -> js/views/flowView.js (guided steps, concepts with a flow only)
 
   Libraries:
     - KaTeX (math notation) is loaded from a CDN below. It creates a global `katex`
@@ -57,8 +58,11 @@
     <!-- The personalized story -->
     <section id="scenario" class="card" aria-label="Scenario"></section>
 
+    <!-- The guided worksheet (js/views/flowView.js). Only used by concepts that have a flow. -->
+    <section id="flow" class="card flow" aria-label="Guided activity" hidden></section>
+
     <!-- The math representations. All are computed from the same params so they always agree. -->
-    <div class="representations">
+    <div class="representations" id="representations">
       <section id="formula" class="card" aria-label="Formula"></section>
       <section id="table" class="card" aria-label="Table of values"></section>
     </div>
