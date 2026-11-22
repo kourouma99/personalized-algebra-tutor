@@ -8,8 +8,9 @@
   our code computed; it never computes them from an equation.
 
   Swapping libraries later (e.g. back to Desmos):
-    The rest of the app only calls the three exported functions below:
-      initGraphing(), renderGraph(state, labels), renderNumberLine(state, labels)
+    The rest of the app only calls the exported functions below:
+      initGraphing(), renderGraph(state, labels), renderNumberLine(state, labels),
+      renderMiniGraphs(elementIds, concept, paramsList), clearMiniGraphs()
     Keep those names and arguments the same, change what's inside them,
     and update `provider` in js/config.js. No other file needs to change.
 
@@ -68,6 +69,58 @@ function boundingBox(xs, ys) {
   return [xMin - padX, yMax + padY, xMax + padX, yMin - padY];
 }
 
+// 101 points from xMin to xMax, every y computed by concept.evaluate
+function sampleCurve(concept, params, steps = 100) {
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = params.xMin + ((params.xMax - params.xMin) * i) / steps;
+    xs.push(x);
+    ys.push(concept.evaluate(params, x));
+  }
+  return { xs, ys };
+}
+
+// ---------------------------------------------------------------------------
+// Small graphs for "Which graph matches?" questions (used by views/flowView.js)
+// ---------------------------------------------------------------------------
+
+let miniBoards = [];
+
+// Frees every small graph. Call before the elements they live in are removed.
+export function clearMiniGraphs() {
+  if (window.JXG) for (const board of miniBoards) JXG.JSXGraph.freeBoard(board);
+  miniBoards = [];
+}
+
+/*
+  Draws one small graph per entry, all with the SAME axes so they can be compared.
+  elementIds[i] is the id of an empty element already on the page; paramsList[i]
+  are the concept params for that graph. Only a line and the axes are drawn:
+  no labels, no points, nothing that names the equation.
+  fitList (optional): the params the shared axes are sized to. Lines outside
+  that area are simply cut off at the edge. Defaults to all of paramsList.
+  Returns the shared bounding box [left, top, right, bottom] (handy for tests).
+*/
+export function renderMiniGraphs(elementIds, concept, paramsList, fitList = paramsList) {
+  const curves = paramsList.map((params) => sampleCurve(concept, params));
+  const fit = fitList.map((params) => sampleCurve(concept, params));
+  const box = boundingBox(fit.flatMap((c) => c.xs), fit.flatMap((c) => c.ys));
+
+  elementIds.forEach((id, i) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    if (!window.JXG) {
+      element.textContent = "Graph unavailable.";
+      return;
+    }
+    const board = JXG.JSXGraph.initBoard(id, { ...boardOptionsFor(false), boundingbox: box });
+    board.create("curve", [curves[i].xs, curves[i].ys], { strokeWidth: 2, highlight: false });
+    miniBoards.push(board);
+  });
+  return box;
+}
+
 export function renderGraph(state, labels) {
   const surface = document.getElementById("graph-surface");
   if (!surface || !state.concept || !state.params) return;
@@ -90,16 +143,8 @@ export function renderGraph(state, labels) {
 
   // Smooth line: sample many x values between the table points. Still computed by
   // OUR evaluate(), not by JSXGraph from an equation.
-  const { xMin, xMax } = state.params;
-  const steps = 100;
-  const curveXs = [];
-  const curveYs = [];
-  for (let i = 0; i <= steps; i++) {
-    const x = xMin + ((xMax - xMin) * i) / steps;
-    curveXs.push(x);
-    curveYs.push(state.concept.evaluate(state.params, x));
-  }
-  graphBoard.create("curve", [curveXs, curveYs], { strokeWidth: 2 });
+  const curve = sampleCurve(state.concept, state.params);
+  graphBoard.create("curve", [curve.xs, curve.ys], { strokeWidth: 2 });
 
   for (const p of points) {
     graphBoard.create("point", [p.x, p.y], { fixed: true, name: "", size: 2 });

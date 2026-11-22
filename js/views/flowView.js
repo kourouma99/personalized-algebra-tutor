@@ -21,6 +21,10 @@ import {
   HINTS_BEFORE_ANSWER,
 } from "../core/flowEngine.js";
 import { renderMath, renderTextWithMath } from "./mathRender.js";
+import { renderMiniGraphs, clearMiniGraphs } from "./graph.js";
+
+// Small graphs to draw once the step is on the page (JSXGraph needs the elements to exist)
+let pendingGraphs = [];
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -92,7 +96,44 @@ function checkButton(disabled) {
 
 // ---------- item types ----------
 
+// Choice where every option is a small graph (option.graph = params for that line)
+function renderGraphChoice(item, progress, run, handlers) {
+  const wrap = el("div", "flow-item");
+  wrap.appendChild(mathText("p", "flow-prompt", item.prompt));
+
+  const grid = el("div", "flow-graph-choices");
+  const ids = [];
+  item.options.forEach((option, i) => {
+    const card = el("div", "flow-graph-option");
+    const pickedWrong = progress.wrongKeys.includes(option.key);
+    const disabled = progress.done || pickedWrong;
+    if (pickedWrong) card.classList.add("is-wrong");
+    if (progress.done && item.check(option.key)) card.classList.add("is-correct");
+
+    const surface = el("div", "flow-mini-graph");
+    surface.id = `mini-${item.id}-${i}`;
+    surface.setAttribute("aria-hidden", "true"); // the button below names the option
+    ids.push(surface.id);
+
+    const pickButton = button(option.text, "flow-choice");
+    pickButton.disabled = disabled;
+    // Clicking the graph or its button picks it (the button's click bubbles up here)
+    card.addEventListener("click", () => {
+      if (!disabled) handlers.onAnswer(item.id, option.key);
+    });
+
+    card.append(surface, pickButton);
+    grid.appendChild(card);
+  });
+  const paramsList = item.options.map((o) => o.graph);
+  pendingGraphs.push({ ids, paramsList, fitList: item.graphFit ?? paramsList });
+
+  wrap.append(grid, feedbackNode(progress.feedback), helpNode(item, progress, run, handlers));
+  return wrap;
+}
+
 function renderChoice(item, progress, run, handlers) {
+  if (item.display === "graphs") return renderGraphChoice(item, progress, run, handlers);
   const wrap = el("div", "flow-item");
   wrap.appendChild(mathText("p", "flow-prompt", item.prompt));
 
@@ -241,6 +282,8 @@ function renderTable(table, items, run, groupId, handlers) {
 export function renderFlow(state, handlers) {
   const container = document.getElementById("flow");
   if (!container) return;
+  clearMiniGraphs(); // free the old small graphs before their elements are removed
+  pendingGraphs = [];
   container.textContent = "";
 
   const run = state.flowRun;
@@ -309,6 +352,10 @@ export function renderFlow(state, handlers) {
         : "You reached the end! Click New scenario to try another story.";
     container.appendChild(el("p", skippedNames.length ? "flow-done has-skipped" : "flow-done", text));
   }
+
+  // Now that the step is on the page, draw its small graphs (same axes for all of one item)
+  for (const { ids, paramsList, fitList } of pendingGraphs) renderMiniGraphs(ids, state.concept, paramsList, fitList);
+  pendingGraphs = [];
 
   // Put the cursor in the first empty box, unless the student is typing somewhere else
   const active = document.activeElement;

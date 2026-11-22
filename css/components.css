@@ -317,3 +317,48 @@
 .step-list li.is-skipped .step-marker {
   font-size: 0.8rem;
 }
+
+/* ---------- "Which graph matches?" (small graphs, drawn by graph.js) ---------- */
+.flow-graph-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.flow-graph-option {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  background: white;
+  cursor: pointer;
+}
+.flow-graph-option:hover:not(.is-wrong):not(.is-correct) {
+  border-color: var(--color-primary);
+}
+.flow-graph-option .flow-choice {
+  text-align: center;
+}
+.flow-graph-option.is-wrong {
+  border-color: #c92a2a;
+  background: #fff5f5;
+  cursor: default;
+  opacity: 0.6;
+}
+.flow-graph-option.is-correct {
+  border-color: #2b8a3e;
+  background: #ebfbee;
+  cursor: default;
+}
+/* JSXGraph needs a real height, like .graph-surface in base.css */
+.flow-mini-graph {
+  width: 100%;
+  height: 160px;
+}
+@media (max-width: 480px) {
+  .flow-mini-graph {
+    height: 130px;
+  }
+}

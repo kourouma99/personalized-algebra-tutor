@@ -10,7 +10,7 @@
   Steps (same order as core/sequence.js):
     1. Explore   — read the story, predict: does y go up, down or stay the same?
     2. Notice    — fill in a table, then find the change per step (m)
-    3. Represent — type the equation, then pick the matching equation
+    3. Represent — type the equation, then pick the graph that matches it
     4. Solve     — answer the story's question for a new x
     5. Explain   — what do m and b mean in this story?
     6. Transfer  — no story: evaluate f(x) = mx + b, including a fraction
@@ -49,8 +49,12 @@ export function shuffle(list, rng = Math.random) {
   equal to "correct"), or has slope 0 (not a real line here), it is replaced
   with y = (m+1)x + b, then (m+2)x + b, … until it is new.
   Returns [{ key, m, b }] in this order; the caller shuffles.
+
+  isTooClose (optional): an extra rule for when options are shown as GRAPHS.
+  A wrong option it rejects (e.g. y = 10x next to y = 10x + 1, which look like the
+  same line) is replaced the same way as a duplicate.
 */
-export function equationOptions(m, b) {
+export function equationOptions(m, b, isTooClose = () => false) {
   const candidates = [
     { key: "correct", m, b },
     { key: "swapped", m: b, b: m },
@@ -62,7 +66,8 @@ export function equationOptions(m, b) {
   let shift = 1;
   for (const candidate of candidates) {
     let option = candidate;
-    while (seen.has(`${option.m}|${option.b}`) || option.m === 0) {
+    const rejected = (o) => seen.has(`${o.m}|${o.b}`) || o.m === 0 || (options.length > 0 && isTooClose(o));
+    while (rejected(option)) {
       option = { key: `replacement-for-${candidate.key}`, m: m + shift, b };
       shift += 1;
     }
@@ -70,6 +75,20 @@ export function equationOptions(m, b) {
     options.push(option);
   }
   return options;
+}
+
+/*
+  For graph options: true if a line would look like the correct line y = mx + b.
+  Lines are compared at both ends of the x range; they must differ there by at
+  least 8% of the graph's height. That height is estimated as the starting value
+  plus the rise twice (the wrong-sign line goes the other way from the same start).
+*/
+export function looksLikeLine(m, b, xMin, xMax, minGap = 0.08) {
+  const size = 2 * Math.abs(m) * (xMax - xMin) + Math.abs(b);
+  return (o) => {
+    const gap = Math.max(...[xMin, xMax].map((x) => Math.abs(o.m * x + o.b - (m * x + b))));
+    return gap < minGap * size;
+  };
 }
 
 // "Games played" -> "games played", so labels fit inside a sentence
@@ -248,15 +267,22 @@ export default {
     };
 
     // ---- 3. Represent ----
-    const eqOptions = equationOptions(m, b).map((o) => ({
+    // Four graphs: correct, swapped, wrong sign, no intercept (same rules as before).
+    // Shuffled first, THEN named A–D, so the letter never hints at the answer.
+    // Extra rule for graphs: no wrong line that looks just like the right one.
+    const tooClose = looksLikeLine(m, b, params.xMin, params.xMax);
+    const graphOptions = shuffle(equationOptions(m, b, tooClose), rng).map((o, i) => ({
       key: o.key,
-      text: `\\(${latex({ m: o.m, b: o.b })}\\)`,
+      text: `Graph ${"ABCD"[i]}`,
+      graph: { m: o.m, b: o.b, xMin: params.xMin, xMax: params.xMax }, // drawn by views/graph.js
     }));
+    const correctGraph = graphOptions.find((o) => o.key === "correct");
     const represent = {
       id: "represent",
-      instructions: "Turn the pattern into an equation.",
+      instructions: "Turn the pattern into an equation, then find its graph.",
       show: ["story"],
-      revealAfter: { "represent-equation": ["formula", "graph"] },
+      // The formula appears once the equation is typed; the big graph only after the right pick
+      revealAfter: { "represent-equation": ["formula"], "represent-match": ["graph"] },
       items: [
         {
           id: "represent-equation",
@@ -282,17 +308,24 @@ export default {
             `The change per step is what you found in Notice. The starting amount is \\(y\\) when \\(x = 0\\), which is ${y(0)}.`,
           ],
         },
-        choiceItem({
+        {
           id: "represent-match",
-          prompt: "Which equation matches this story?",
-          options: eqOptions,
-          correctKey: "correct",
+          type: "choice",
+          display: "graphs", // the view draws each option's `graph` instead of text
+          prompt: "Which graph matches your equation?",
+          options: graphOptions,
+          // Size the shared axes to every line except "swapped" (y = bx + m). Its slope is b,
+          // often 30+, which would squash the other three into flat look-alikes. When it is
+          // steep it just runs off the top edge, which is still easy to tell apart.
+          graphFit: graphOptions.filter((o) => o.key !== "swapped").map((o) => o.graph),
+          check: (key) => key === "correct",
+          answerText: correctGraph.text,
           hints: [
-            "Test an option: put in \\(x = 0\\) and \\(x = 1\\). Does it give the same \\(y\\) as your table?",
-            `The right equation gives \\(y = ${y(0)}\\) when \\(x = 0\\), and \\(y = ${y(1)}\\) when \\(x = 1\\).`,
+            `Look where each line crosses the \\(y\\)-axis (at \\(x = 0\\)). Your equation gives \\(y = ${y(0)}\\) there.`,
+            `Your line goes through \\((0, ${y(0)})\\) and \\((${params.xMax}, ${y(params.xMax)})\\). ` +
+              `It goes ${m > 0 ? "up" : "down"} from left to right.`,
           ],
-          rng,
-        }),
+        },
       ],
     };
 

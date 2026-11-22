@@ -21,7 +21,7 @@ import { renderInterestPicker } from "./views/interestPicker.js";
 import { renderScenario } from "./views/scenario.js";
 import { renderFormula } from "./views/formula.js";
 import { renderTable } from "./views/table.js";
-import { initGraphing, renderGraph, renderNumberLine } from "./views/graph.js";
+import { initGraphing, renderGraph, renderNumberLine, clearMiniGraphs } from "./views/graph.js";
 
 import { renderConceptPicker } from "./views/conceptPicker.js";
 import { renderFlow } from "./views/flowView.js";
@@ -79,6 +79,7 @@ function refreshAllAtOnce() {
   const labels = currentLabels();
   for (const id of ["scenario", "representations", "formula", "table", "graph"]) setVisible(id, true);
   setVisible("flow", false);
+  clearMiniGraphs(); // the flow's small graphs, if we just left a guided concept
   renderScenario(state);
   renderFormula(state, labels);
   renderTable(state, labels);
