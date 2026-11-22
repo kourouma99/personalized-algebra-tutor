@@ -18,6 +18,8 @@
       instructions: "…",               // short line under the step name
       show: ["story"],                 // representations visible during this step
       revealAfter: { itemId: ["formula", "graph"] }, // extra ones once an item is done
+      requires: { formula: "represent" }, // hide one until that step is complete
+      referenceTable: "notice-table",  // optional: read-only copy of an earlier step's table
       intro: "…", introMath: "…",      // optional text / display math above the items
       tables: { groupId: { …, autoFill } }, // optional: items with that `group` form a table
       items: [ … ],
@@ -134,7 +136,31 @@ export function visibleRepresentations(run, stepIndex) {
   for (const [itemId, extra] of Object.entries(step.revealAfter ?? {})) {
     if (isItemDone(run, itemId)) extra.forEach((r) => shown.add(r));
   }
+  // step.requires = { formula: "represent" }: shown only once that step is complete
+  // (every item answered or revealed). Skipping it does not count.
+  for (const [name, stepId] of Object.entries(step.requires ?? {})) {
+    const index = run.steps.findIndex((s) => s.id === stepId);
+    if (index !== -1 && !isStepComplete(run, index)) shown.delete(name);
+  }
   return [...shown];
+}
+
+// For step.referenceTable: the rows of a table from an earlier step, as the student
+// knows them. Returns { table, rows: [{ x, y, given }] } with y = null if not found yet.
+export function referenceTable(run, groupId) {
+  const owner = run.steps.find((s) => s.tables?.[groupId]);
+  if (!owner) return null;
+  const table = owner.tables[groupId];
+  const rows = [
+    ...table.given.map((r) => ({ x: r.x, y: r.y, given: true })),
+    ...owner.items
+      .filter((it) => it.group === groupId)
+      .map((it) => {
+        const p = getProgress(run, it.id);
+        return { x: it.x, y: p.done ? it.answer : null, given: false };
+      }),
+  ];
+  return { table, rows };
 }
 
 export function findItem(run, stepIndex, itemId) {

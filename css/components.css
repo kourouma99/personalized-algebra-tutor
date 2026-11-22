@@ -362,3 +362,16 @@
     height: 130px;
   }
 }
+
+/* Read-only "Your table" in Solve and Explain */
+.flow-reference {
+  margin: 0 0 12px;
+}
+.flow-reference-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.flow-table td.is-unknown {
+  color: var(--color-muted);
+}

@@ -17,6 +17,7 @@ import {
   isStepSkipped,
   canMoveOn,
   canRevealAnswer,
+  referenceTable,
   visibleItems,
   HINTS_BEFORE_ANSWER,
 } from "../core/flowEngine.js";
@@ -61,13 +62,13 @@ function feedbackNode(feedback, wrongText = "Not quite, try again.") {
   return node;
 }
 
-// Hints shown so far, then "Need a hint?" or "Show answer" (only after a try)
+// Hints shown so far, then "Need a hint?" (available from the start) or "Show answer"
 function helpNode(item, progress, run, handlers) {
   const wrap = el("div", "flow-help");
   progress.hints.forEach((text, i) => {
     wrap.appendChild(mathText("p", "flow-hint", `Hint ${i + 1}: ${text}`));
   });
-  if (progress.done || progress.attempts === 0) return wrap;
+  if (progress.done) return wrap;
 
   const available = Math.min(item.hints?.length ?? 0, HINTS_BEFORE_ANSWER);
   if (progress.hints.length < available) {
@@ -268,13 +269,42 @@ function renderTable(table, items, run, groupId, handlers) {
   else if (wrongXs.length) message = { kind: "wrong" };
   form.appendChild(feedbackNode(message, `Not quite, try again (check x = ${wrongXs.join(", ")}).`));
 
-  // Help for the first unfinished cell that has been tried
-  const target = items.find((it) => {
-    const p = getProgress(run, it.id);
-    return !p.done && p.attempts > 0;
-  });
+  // Help for one cell: the first unfinished cell that has been tried, else the first unfinished one
+  const open = items.filter((it) => !getProgress(run, it.id).done);
+  const target = open.find((it) => getProgress(run, it.id).attempts > 0) ?? open[0];
   if (target) form.appendChild(helpNode(target, getProgress(run, target.id), run, handlers));
   return form;
+}
+
+// Read-only copy of an earlier table: what the student found ("?" where they haven't yet)
+function renderReferenceTable(run, groupId) {
+  const data = referenceTable(run, groupId);
+  if (!data) return null;
+  const wrap = el("div", "flow-reference");
+  wrap.appendChild(el("p", "flow-reference-title", "Your table"));
+
+  const tableEl = el("table", "flow-table");
+  const headRow = el("tr");
+  for (const v of ["x", "y"]) {
+    const th = el("th");
+    const symbol = el("span");
+    renderMath(symbol, v);
+    const name = data.table.columns[v];
+    if (name && name !== v) th.append(document.createTextNode(`${name} (`), symbol, document.createTextNode(")"));
+    else th.appendChild(symbol);
+    headRow.appendChild(th);
+  }
+  const thead = el("thead");
+  thead.appendChild(headRow);
+  const tbody = el("tbody");
+  for (const row of data.rows) {
+    const tr = el("tr");
+    tr.append(el("td", "", String(row.x)), el("td", row.y === null ? "is-unknown" : "", row.y === null ? "?" : String(row.y)));
+    tbody.appendChild(tr);
+  }
+  tableEl.append(thead, tbody);
+  wrap.appendChild(tableEl);
+  return wrap;
 }
 
 // ---------- the whole step ----------
@@ -302,6 +332,10 @@ export function renderFlow(state, handlers) {
     container.appendChild(display);
   }
   if (step.intro) container.appendChild(mathText("p", "flow-intro", step.intro));
+  if (step.referenceTable) {
+    const reference = renderReferenceTable(run, step.referenceTable);
+    if (reference) container.appendChild(reference);
+  }
 
   // Draw visible items; items sharing a `group` are drawn together once, as a table
   const drawnGroups = new Set();

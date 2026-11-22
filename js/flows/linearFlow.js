@@ -130,11 +130,21 @@ function numberItem({ id, prompt, answer, hints, answerText, tolerance, ...rest 
     id,
     type: "number",
     prompt,
+    answer, // kept so a later step can show the solved value (e.g. the reference table)
     check: numberCheck(answer, tolerance),
     answerText: answerText ?? `\\(${answer}\\)`,
     hints,
     ...rest,
   };
+}
+
+// Sign-aware wording for a change: "goes up by 4", "goes down by 4", "stays the same".
+// Hints never say "add -4".
+export function change(n, tense = "present") {
+  const [up, down, same] = tense === "past" ? ["went up", "went down", "stayed the same"] : ["goes up", "goes down", "stays the same"];
+  if (n > 0) return `${up} by ${n}`;
+  if (n < 0) return `${down} by ${-n}`;
+  return same;
 }
 
 // The known row closest to x (ties go to the smaller x). Rows are { x, y }.
@@ -167,16 +177,21 @@ export function tableCellHints(x, givenRows, cells, y) {
     return { from, dx, steps: Math.abs(dx), dir: dx > 0 ? "up" : "down" };
   };
   const [first, second] = givenRows;
+  // Direction per step, read from the two given rows (data, not a hardcoded slope)
+  const perStep = (second.y - first.y) / (second.x - first.x);
+  const yDir = perStep > 0 ? "up" : "down";
   return [
     ({ solved }) => {
       const { from, steps, dir } = jump(solved);
       return `From \\(x = ${from.x}\\) to \\(x = ${x}\\), \\(x\\) goes ${dir} by ${steps}. How much should \\(y\\) change?`;
     },
     ({ solved }) => {
-      const { from, steps, dir } = jump(solved);
-      const action = dir === "up" ? "add it to" : "take it away from";
-      return `Each time \\(x\\) goes up by 1, \\(y\\) changes by the same amount (look from \\(x = ${first.x}\\) to \\(x = ${second.x}\\)). ` +
-        `Multiply that change by ${steps}, then ${action} \\(y = ${from.y}\\), the value at \\(x = ${from.x}\\).`;
+      const { from, steps, dx } = jump(solved);
+      // y moves up if the per-step direction and the x direction agree, down otherwise
+      const total = perStep * dx;
+      const action = total > 0 ? "add it to" : "subtract it from";
+      return `Each time \\(x\\) goes up by 1, \\(y\\) goes ${yDir} by the same amount (look from \\(x = ${first.x}\\) to \\(x = ${second.x}\\)). ` +
+        `Multiply that amount by ${steps}, then ${action} \\(y = ${from.y}\\), the value at \\(x = ${from.x}\\).`;
     },
   ];
 }
@@ -209,8 +224,11 @@ export default {
     const solveChoices = SOLVE_XS.filter((x) => x >= params.xMin && x <= params.xMax);
     const qx = solveChoices.length ? solveChoices[Math.floor(rng() * solveChoices.length)] : params.xMax;
 
-    // "(-4) \cdot 7" or "4 \cdot 7", for hints that spell out a calculation
-    const times = (k, x) => `${k < 0 ? `(${k})` : k} \\cdot ${x}`;
+    // Hint 2 for "find y at x": start at b, then go up/down |m| for each of the x steps.
+    // e.g. "Start at 50. For each of the 7 steps, y goes down by 4: 50 − 4 · 7."
+    const stepsHint = (x) =>
+      `Start at ${b} (the value when \\(x = 0\\)). For each of the ${x} steps, \\(y\\) ${change(m)}: ` +
+      `\\(${b} ${m < 0 ? "-" : "+"} ${Math.abs(m)} \\cdot ${x}\\).`;
 
     // ---- 1. Explore ----
     const direction = m > 0 ? "up" : m < 0 ? "down" : "same";
@@ -230,7 +248,7 @@ export default {
           correctKey: direction,
           hints: [
             `Read the story again: each time \\(x\\) goes up by 1, does the amount get bigger or smaller?`,
-            `Each time ${X} goes up by 1, ${Y} changes by ${Math.abs(m)}. In the story, is that amount added or taken away?`,
+            `In the story, each time ${X} goes up by 1, ${Y} ${change(m)}.`,
           ],
           rng,
         }),
@@ -270,7 +288,8 @@ export default {
           answer: m,
           hints: [
             `Compare the rows for \\(x = 0\\) and \\(x = 1\\) in your table.`,
-            `Subtract: \\(${y(1)} - ${y(0)}\\). If \\(y\\) goes down, the change is negative (like \\(-3\\)).`,
+            `From \\(x = 0\\) to \\(x = 1\\), \\(y\\) goes from ${y(0)} to ${y(1)}. Subtract: \\(${y(1)} - ${y(0)}\\). ` +
+              (m < 0 ? "Since \\(y\\) goes down, the answer is a negative number." : "Since \\(y\\) goes up, the answer is a positive number."),
           ],
         }),
       ],
@@ -390,6 +409,10 @@ export default {
       id: "solve",
       instructions: "Use your equation to answer the story's question.",
       show: ["story", "formula", "graph"],
+      // Formula and graph give away Represent, so they wait until Represent is complete
+      // (answered or revealed). Until then: the story and the student's own table.
+      requires: { formula: "represent", graph: "represent" },
+      referenceTable: "notice-table",
       items: [
         numberItem({
           id: "solve-question",
@@ -398,7 +421,7 @@ export default {
           qx,
           hints: [
             `Put \\(x = ${qx}\\) into your equation and calculate \\(y\\).`,
-            `Calculate \\(${times(m, qx)} + ${b}\\).`,
+            stepsHint(qx),
           ],
         }),
       ],
@@ -409,6 +432,10 @@ export default {
       id: "explain",
       instructions: "Explain what the numbers in the equation mean in the story.",
       show: ["story", "formula", "graph"],
+      // Formula and graph give away Represent, so they wait until Represent is complete
+      // (answered or revealed). Until then: the story and the student's own table.
+      requires: { formula: "represent", graph: "represent" },
+      referenceTable: "notice-table",
       items: [
         choiceItem({
           id: "explain-m",
@@ -422,7 +449,7 @@ export default {
           correctKey: "correct",
           hints: [
             `\\(m\\) is multiplied by \\(x\\), so it counts again each time \\(x\\) goes up.`,
-            `In your table, each time \\(x\\) went up by 1, \\(y\\) changed by ${m}. Which option says that?`,
+            `In your table, each time \\(x\\) went up by 1, \\(y\\) ${change(m, "past")}. Which option says that?`,
           ],
           rng,
         }),
@@ -463,7 +490,7 @@ export default {
             tolerance: DECIMAL_TOLERANCE,
             hints: [
               `Replace \\(x\\) with ${x} in the rule, then calculate.`,
-              `Calculate \\(${times(m, x)} + ${b}\\).`,
+              stepsHint(x),
             ],
           })
         ),
@@ -474,9 +501,12 @@ export default {
           answerText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\) (about ${y(numerator / denominator).toFixed(2)})`,
           tolerance: DECIMAL_TOLERANCE,
           hints: [
-            `Multiply ${m} by \\(\\frac{${numerator}}{${denominator}}\\), then add ${b}. A fraction answer like 12/7 is fine.`,
-            `\\(${times(m, `\\frac{${numerator}}{${denominator}}`)} = \\frac{${m * numerator}}{${denominator}}\\) and ` +
-              `\\(${b} = \\frac{${b * denominator}}{${denominator}}\\). Add the two tops and keep ${denominator} on the bottom.`,
+            `\\(y\\) ${change(m)} for each whole step of \\(x\\). Work out how much it goes ${m > 0 ? "up" : "down"} ` +
+              `for \\(\\frac{${numerator}}{${denominator}}\\) of a step, then ${m > 0 ? "add it to" : "subtract it from"} ${b}. ` +
+              `A fraction answer like 12/7 is fine.`,
+            `From \\(x = 0\\) to \\(x = \\frac{${numerator}}{${denominator}}\\), \\(y\\) goes ${m > 0 ? "up" : "down"} by ` +
+              `\\(${Math.abs(m)} \\cdot \\frac{${numerator}}{${denominator}} = \\frac{${Math.abs(m) * numerator}}{${denominator}}\\). ` +
+              `Start from \\(${b} = \\frac{${b * denominator}}{${denominator}}\\) and ${m > 0 ? "add" : "subtract"}; keep ${denominator} on the bottom.`,
           ],
         }),
       ],
