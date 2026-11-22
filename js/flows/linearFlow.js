@@ -89,7 +89,7 @@ function numberCheck(answer, tolerance) {
   };
 }
 
-function choiceItem({ id, prompt, options, correctKey, hint, rng }) {
+function choiceItem({ id, prompt, options, correctKey, hints, rng }) {
   const correct = options.find((o) => o.key === correctKey);
   return {
     id,
@@ -98,20 +98,64 @@ function choiceItem({ id, prompt, options, correctKey, hint, rng }) {
     options: shuffle(options, rng),
     check: (key) => key === correctKey,
     answerText: correct.text,
-    hint,
+    hints,
   };
 }
 
-function numberItem({ id, prompt, answer, hint, answerText, tolerance, ...rest }) {
+function numberItem({ id, prompt, answer, hints, answerText, tolerance, ...rest }) {
   return {
     id,
     type: "number",
     prompt,
     check: numberCheck(answer, tolerance),
     answerText: answerText ?? `\\(${answer}\\)`,
-    hint,
+    hints,
     ...rest,
   };
+}
+
+// The known row closest to x (ties go to the smaller x). Rows are { x, y }.
+export function nearestRow(rows, x) {
+  let best = null;
+  for (const row of rows) {
+    if (row.x === x) continue;
+    const distance = Math.abs(row.x - x);
+    if (!best || distance < Math.abs(best.x - x) || (distance === Math.abs(best.x - x) && row.x < best.x)) {
+      best = row;
+    }
+  }
+  return best;
+}
+
+/*
+  Targeted hints for one missing table cell, computed from the rows the student
+  can already see (the given rows plus cells already solved):
+    1. "From x = 5 to x = 8, x goes up by 3. How much should y go up?"
+    2. the same jump, spelled out with the change per step from x = 0 to x = 1
+*/
+export function tableCellHints(x, givenRows, cells, y) {
+  const knownRows = (solved) => [
+    ...givenRows,
+    ...cells.filter((c) => c.x !== x && solved(c.id)).map((c) => ({ x: c.x, y: y(c.x) })),
+  ];
+  const jump = (solved) => {
+    const from = nearestRow(knownRows(solved), x);
+    const dx = x - from.x;
+    return { from, dx, steps: Math.abs(dx), dir: dx > 0 ? "up" : "down" };
+  };
+  const [first, second] = givenRows;
+  return [
+    ({ solved }) => {
+      const { from, steps, dir } = jump(solved);
+      return `From \\(x = ${from.x}\\) to \\(x = ${x}\\), \\(x\\) goes ${dir} by ${steps}. How much should \\(y\\) change?`;
+    },
+    ({ solved }) => {
+      const { from, steps, dir } = jump(solved);
+      const action = dir === "up" ? "add it to" : "take it away from";
+      return `Each time \\(x\\) goes up by 1, \\(y\\) changes by the same amount (look from \\(x = ${first.x}\\) to \\(x = ${second.x}\\)). ` +
+        `Multiply that change by ${steps}, then ${action} \\(y = ${from.y}\\), the value at \\(x = ${from.x}\\).`;
+    },
+  ];
 }
 
 // ---------- the flow ----------
@@ -136,6 +180,9 @@ export default {
     const solveChoices = SOLVE_XS.filter((x) => x >= params.xMin && x <= params.xMax);
     const qx = solveChoices.length ? solveChoices[Math.floor(rng() * solveChoices.length)] : params.xMax;
 
+    // "(-4) \cdot 7" or "4 \cdot 7", for hints that spell out a calculation
+    const times = (k, x) => `${k < 0 ? `(${k})` : k} \\cdot ${x}`;
+
     // ---- 1. Explore ----
     const direction = m > 0 ? "up" : m < 0 ? "down" : "same";
     const explore = {
@@ -152,13 +199,18 @@ export default {
             { key: "same", text: "stay the same" },
           ],
           correctKey: direction,
-          hint: `Read the story again: each time \\(x\\) goes up by 1, does the amount get bigger or smaller?`,
+          hints: [
+            `Read the story again: each time \\(x\\) goes up by 1, does the amount get bigger or smaller?`,
+            `Each time ${X} goes up by 1, ${Y} changes by ${Math.abs(m)}. In the story, is that amount added or taken away?`,
+          ],
           rng,
         }),
       ],
     };
 
     // ---- 2. Notice ----
+    const givenRows = GIVEN_XS.map((x) => ({ x, y: y(x) }));
+    const cells = TABLE_XS.filter((x) => !GIVEN_XS.includes(x)).map((x) => ({ x, id: `notice-y-at-${x}` }));
     const notice = {
       id: "notice",
       instructions: "Use the story to fill in the table. Look for a pattern.",
@@ -167,25 +219,30 @@ export default {
         "notice-table": {
           prompt: "Fill in the missing values of \\(y\\).",
           columns: { x: labels.x, y: labels.y },
-          given: GIVEN_XS.map((x) => ({ x, y: y(x) })),
+          given: givenRows,
+          // First two missing cells right on the first try -> fill in the rest
+          autoFill: { after: 2, message: "Nice, you've got the pattern!" },
         },
       },
       items: [
-        ...TABLE_XS.filter((x) => !GIVEN_XS.includes(x)).map((x) =>
+        ...cells.map(({ x, id }) =>
           numberItem({
-            id: `notice-y-at-${x}`,
+            id,
             prompt: `\\(y\\) when \\(x = ${x}\\)`,
             answer: y(x),
             group: "notice-table",
             x,
-            hint: `Compare the rows for \\(x = 0\\) and \\(x = 1\\). Each time \\(x\\) goes up by 1, \\(y\\) changes by that same amount.`,
+            hints: tableCellHints(x, givenRows, cells, y),
           })
         ),
         numberItem({
           id: "notice-slope",
           prompt: `How much does \\(y\\) change when \\(x\\) goes up by 1?`,
           answer: m,
-          hint: `Subtract: \\(y\\) at \\(x = 1\\) minus \\(y\\) at \\(x = 0\\). If \\(y\\) goes down, the change is negative (like \\(-3\\)).`,
+          hints: [
+            `Compare the rows for \\(x = 0\\) and \\(x = 1\\) in your table.`,
+            `Subtract: \\(${y(1)} - ${y(0)}\\). If \\(y\\) goes down, the change is negative (like \\(-3\\)).`,
+          ],
         }),
       ],
     };
@@ -212,21 +269,28 @@ export default {
             return numbersMatch(slope, m) && numbersMatch(intercept, b);
           },
           answerText: `\\(${latex(params)}\\)`,
-          hint: (raw) => {
-            const [slope, intercept] = (raw ?? []).map(parseNumber);
-            const slopeOk = slope !== null && numbersMatch(slope, m);
-            const interceptOk = intercept !== null && numbersMatch(intercept, b);
-            if (!slopeOk && interceptOk) return "The number in front of \\(x\\) is the change per step you found in Notice.";
-            if (slopeOk && !interceptOk) return "The number you add is the starting amount: the value of \\(y\\) when \\(x = 0\\).";
-            return "The number in front of \\(x\\) is the change per step. The number you add is \\(y\\) when \\(x = 0\\).";
-          },
+          hints: [
+            // Nudge: points at whichever box is wrong in the last attempt
+            ({ answer }) => {
+              const [slope, intercept] = (answer ?? []).map(parseNumber);
+              const slopeOk = slope != null && numbersMatch(slope, m);
+              const interceptOk = intercept != null && numbersMatch(intercept, b);
+              if (!slopeOk && interceptOk) return "Your second box is right. The number in front of \\(x\\) is the change per step.";
+              if (slopeOk && !interceptOk) return "Your first box is right. The number you add is the starting amount.";
+              return "The number in front of \\(x\\) is the change per step. The number you add is the starting amount.";
+            },
+            `The change per step is what you found in Notice. The starting amount is \\(y\\) when \\(x = 0\\), which is ${y(0)}.`,
+          ],
         },
         choiceItem({
           id: "represent-match",
           prompt: "Which equation matches this story?",
           options: eqOptions,
           correctKey: "correct",
-          hint: "Test an option: put in \\(x = 0\\) and \\(x = 1\\). Does it give the same \\(y\\) as your table?",
+          hints: [
+            "Test an option: put in \\(x = 0\\) and \\(x = 1\\). Does it give the same \\(y\\) as your table?",
+            `The right equation gives \\(y = ${y(0)}\\) when \\(x = 0\\), and \\(y = ${y(1)}\\) when \\(x = 1\\).`,
+          ],
           rng,
         }),
       ],
@@ -246,7 +310,10 @@ export default {
           prompt: question,
           answer: y(qx),
           qx,
-          hint: `Put \\(x = ${qx}\\) into the equation and calculate \\(y\\).`,
+          hints: [
+            `Put \\(x = ${qx}\\) into your equation and calculate \\(y\\).`,
+            `Calculate \\(${times(m, qx)} + ${b}\\).`,
+          ],
         }),
       ],
     };
@@ -267,7 +334,10 @@ export default {
             { key: "number-of-steps", text: `the number of ${units.x}` },
           ],
           correctKey: "correct",
-          hint: `\\(m\\) is multiplied by \\(x\\), so it matters more each time \\(x\\) goes up.`,
+          hints: [
+            `\\(m\\) is multiplied by \\(x\\), so it counts again each time \\(x\\) goes up.`,
+            `In your table, each time \\(x\\) went up by 1, \\(y\\) changed by ${m}. Which option says that?`,
+          ],
           rng,
         }),
         choiceItem({
@@ -280,7 +350,10 @@ export default {
             { key: "slope", text: "the slope of the line" },
           ],
           correctKey: "correct",
-          hint: `Put \\(x = 0\\) into the equation. What is left?`,
+          hints: [
+            `Put \\(x = 0\\) into the equation. What is left?`,
+            `When \\(x = 0\\), \\(y = ${b}\\). That is the amount before anything has happened.`,
+          ],
           rng,
         }),
       ],
@@ -302,7 +375,10 @@ export default {
             prompt: `\\(f(${x}) = ?\\)`,
             answer: y(x),
             tolerance: DECIMAL_TOLERANCE,
-            hint: `Replace \\(x\\) with ${x} in the rule, then calculate.`,
+            hints: [
+              `Replace \\(x\\) with ${x} in the rule, then calculate.`,
+              `Calculate \\(${times(m, x)} + ${b}\\).`,
+            ],
           })
         ),
         numberItem({
@@ -311,7 +387,11 @@ export default {
           answer: y(numerator / denominator),
           answerText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\) (about ${y(numerator / denominator).toFixed(2)})`,
           tolerance: DECIMAL_TOLERANCE,
-          hint: `Multiply ${m} by \\(\\frac{${numerator}}{${denominator}}\\), then add ${b}. A fraction answer like 12/7 is fine.`,
+          hints: [
+            `Multiply ${m} by \\(\\frac{${numerator}}{${denominator}}\\), then add ${b}. A fraction answer like 12/7 is fine.`,
+            `\\(${times(m, `\\frac{${numerator}}{${denominator}}`)} = \\frac{${m * numerator}}{${denominator}}\\) and ` +
+              `\\(${b} = \\frac{${b * denominator}}{${denominator}}\\). Add the two tops and keep ${denominator} on the bottom.`,
+          ],
         }),
       ],
     };

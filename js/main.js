@@ -2,7 +2,19 @@
 import { state, setState } from "./state.js";
 import { validateParams } from "./core/validator.js";
 import { renderSequence, nextStep, previousStep } from "./core/sequence.js";
-import { createRun, submitAnswer, isStepComplete, visibleRepresentations } from "./core/flowEngine.js";
+import {
+  createRun,
+  submitAnswer,
+  submitGroup,
+  requestHint,
+  revealAnswer,
+  skipStep,
+  canMoveOn,
+  canVisit,
+  markVisited,
+  stepStatus,
+  visibleRepresentations,
+} from "./core/flowEngine.js";
 import { interests } from "./data/interests.js";
 import { getScenario } from "./data/sampleScenarios.js";
 import { renderInterestPicker } from "./views/interestPicker.js";
@@ -48,7 +60,15 @@ function setVisible(id, visible) {
 function refreshAll() {
   renderConceptPicker(listConcepts(), state.concept?.id, onConceptChosen);
   renderInterestPicker(interests, state.interest, onInterestChosen, onCustomInterest);
-  renderSequence(state);
+  const run = state.flowRun;
+  renderSequence(
+    state,
+    run && {
+      status: (i) => stepStatus(run, i),
+      canVisit: (i) => canVisit(run, i),
+      onSelect: goToStep,
+    }
+  );
 
   if (state.flowRun) refreshFlow();
   else refreshAllAtOnce();
@@ -84,7 +104,7 @@ function refreshFlow() {
   if (has("story")) renderScenario(state, { showQuestion: false }); // asked later, in Solve
   if (has("formula")) renderFormula(state, labels);
   if (has("graph")) renderGraph(state, labels);
-  renderFlow(state, { onAnswer, onAnswers, onNext, onBack });
+  renderFlow(state, { onAnswer, onAnswers, onHint, onReveal, onSkip, onNext, onBack });
 }
 
 // Build a fresh worksheet for the current params (or clear it for concepts without a flow)
@@ -99,36 +119,60 @@ function startFlow() {
   setState({ flowRun: createRun(concept.flow, concept, params, { scenario, values }), step: 0 });
 }
 
-// Check one answer and keep it in the log (future research data)
-function recordAnswer(itemId, answer) {
-  const { entry } = submitAnswer(state.flowRun, state.step, itemId, answer);
-  if (entry) {
+// Keep every answer, hint request, revealed answer and skip in the log (future research data)
+function record(entries) {
+  for (const entry of entries) {
+    if (!entry) continue;
     state.responses.push(entry);
     console.log("response:", entry);
   }
 }
 
 function onAnswer(itemId, answer) {
-  recordAnswer(itemId, answer);
+  record([submitAnswer(state.flowRun, state.step, itemId, answer).entry]);
   refreshAll();
 }
 
-// Several answers at once (e.g. a table with one Check button)
+// Several answers at once (a table with one Check button)
 function onAnswers(pairs) {
-  for (const [itemId, answer] of pairs) recordAnswer(itemId, answer);
+  record(submitGroup(state.flowRun, state.step, pairs).entries);
+  refreshAll();
+}
+
+function onHint(itemId) {
+  record([requestHint(state.flowRun, state.step, itemId).entry]);
+  refreshAll();
+}
+
+function onReveal(itemId) {
+  record([revealAnswer(state.flowRun, state.step, itemId).entry]);
+  refreshAll();
+}
+
+// Jump to a step (Next, Back, or a click in the step bar)
+function goToStep(index) {
+  const run = state.flowRun;
+  if (!run || index < 0 || index >= run.steps.length) return;
+  markVisited(run, index);
+  setState({ step: index });
   refreshAll();
 }
 
 function onNext() {
-  if (!isStepComplete(state.flowRun, state.step)) return;
-  setState({ step: nextStep(state.step) });
-  refreshAll();
+  if (!canMoveOn(state.flowRun, state.step)) return;
+  goToStep(nextStep(state.step));
   document.getElementById("step-sequence")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function onBack() {
-  setState({ step: previousStep(state.step) });
-  refreshAll();
+  goToStep(previousStep(state.step));
+}
+
+// "Skip for now": mark the step and move on (on the last step, just mark it)
+function onSkip() {
+  record([skipStep(state.flowRun, state.step).entry]);
+  if (state.step < state.flowRun.steps.length - 1) onNext();
+  else refreshAll();
 }
 
 function newScenario() {

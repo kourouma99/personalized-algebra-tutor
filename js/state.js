@@ -17,7 +17,9 @@ export const state = {
   params: null,    // e.g. { m: 3, b: 12, xMin: 0, xMax: 10 }
   step: 0,         // which learning step the student is on
   flowRun: null,   // guided flow for this scenario (see core/flowEngine.js), or null
-  responses: [],   // log of every answer: { step, item, answer, correct, attempts, revealed, time }
+  responses: [],   // research log, one entry per event, each with { type, step, time, ... }:
+                   //   type "answer" (item, answer, correct, attempts, hintsUsed), "hint" (item, hint: 1 or 2),
+                   //   "reveal" (item, hintsUsed), "skip" (unfinished items), "autofill" (items)
 };
 
 // TODO 2: the only way to change state

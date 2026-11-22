@@ -19,7 +19,14 @@ export const steps = [
   { id: "transfer", title: "Transfer", description: "Apply the idea to a new situation." },
 ];
 
-export function renderSequence(state) {
+/*
+  nav (optional, given by main.js when a guided flow is running):
+    status(i)   -> "done" | "skipped" | null, shown as a marker on the step
+    canVisit(i) -> true if the student may jump to step i
+    onSelect(i) -> called when the student clicks step i
+  Without nav, the bar is just a display, as before.
+*/
+export function renderSequence(state, nav) {
   const container = document.getElementById("step-sequence");
   if (!container) return;
   container.textContent = "";
@@ -29,9 +36,28 @@ export function renderSequence(state) {
 
   steps.forEach((step, i) => {
     const item = document.createElement("li");
-    item.textContent = step.title;
+    const status = nav?.status(i) ?? null;
+    const clickable = Boolean(nav?.canVisit(i)) && i !== state.step;
+
+    // A button when the student can jump there, plain text otherwise
+    const label = document.createElement(clickable ? "button" : "span");
+    label.textContent = step.title;
+    if (clickable) {
+      label.type = "button";
+      label.className = "step-link";
+      label.addEventListener("click", () => nav.onSelect(i));
+    }
+    item.appendChild(label);
     item.title = step.description; // shows on hover
 
+    if (status) {
+      item.classList.add(`is-${status}`);
+      const marker = document.createElement("span");
+      marker.className = "step-marker";
+      marker.textContent = status === "done" ? " ✓" : " (skipped)";
+      if (status === "done") marker.setAttribute("aria-label", "done");
+      item.appendChild(marker);
+    }
     if (i === state.step) {
       item.classList.add("is-current");
       item.setAttribute("aria-current", "step"); // screen readers: "current step"
