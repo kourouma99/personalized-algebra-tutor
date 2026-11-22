@@ -141,8 +141,15 @@ export function findItem(run, stepIndex, itemId) {
   return run.steps[stepIndex]?.items.find((it) => it.id === itemId) ?? null;
 }
 
+// step.logFields (optional, from the flow) are added to every entry, e.g. { representFormat: "both" }
 function logEntry(run, stepIndex, fields) {
-  return { step: run.steps[stepIndex].id, ...fields, time: new Date().toISOString() };
+  const step = run.steps[stepIndex];
+  return { step: step.id, ...step.logFields, ...fields, time: new Date().toISOString() };
+}
+
+// A "start" log entry for a new run (extra: e.g. concept, interest, params)
+export function startEntry(run, extra = {}) {
+  return { type: "start", ...run.steps[0]?.logFields, ...extra, time: new Date().toISOString() };
 }
 
 /*

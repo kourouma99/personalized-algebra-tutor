@@ -10,7 +10,8 @@
   Steps (same order as core/sequence.js):
     1. Explore   — read the story, predict: does y go up, down or stay the same?
     2. Notice    — fill in a table, then find the change per step (m)
-    3. Represent — type the equation, then pick the graph that matches it
+    3. Represent — one of three formats (settings.representFormat, default "random"):
+                   write the equation, choose it from 4, or write it then pick its graph
     4. Solve     — answer the story's question for a new x
     5. Explain   — what do m and b mean in this story?
     6. Transfer  — no story: evaluate f(x) = mx + b, including a fraction
@@ -28,6 +29,9 @@ const SOLVE_XS = [3, 4, 6, 7, 9, 10]; // not in the table, so the student must u
 const TRANSFER_XS = [2, 12];
 const TRANSFER_FRACTION = { numerator: 3, denominator: 7 };
 const DECIMAL_TOLERANCE = 0.01; // for the transfer step, where decimals like 1.71 are fine
+
+// Question formats for the Represent step (the setting can also be "random")
+export const REPRESENT_FORMATS = ["write", "choose", "both"];
 
 // ---------- small helpers (exported so they can be tested in Node) ----------
 
@@ -182,6 +186,12 @@ export function tableCellHints(x, givenRows, cells, y) {
 export default {
   id: "linear-guided",
 
+  // Change these to configure the flow. main.js can also pass context.settings to override.
+  settings: {
+    // "write" | "choose" | "both", or "random" = one of those, picked once per scenario
+    representFormat: "random",
+  },
+
   buildSteps(concept, params, context = {}, rng = Math.random) {
     const { m, b } = params;
     const y = (x) => concept.evaluate(params, x);
@@ -267,25 +277,20 @@ export default {
     };
 
     // ---- 3. Represent ----
-    // Four graphs: correct, swapped, wrong sign, no intercept (same rules as before).
-    // Shuffled first, THEN named A–D, so the letter never hints at the answer.
-    // Extra rule for graphs: no wrong line that looks just like the right one.
-    const tooClose = looksLikeLine(m, b, params.xMin, params.xMax);
-    const graphOptions = shuffle(equationOptions(m, b, tooClose), rng).map((o, i) => ({
-      key: o.key,
-      text: `Graph ${"ABCD"[i]}`,
-      graph: { m: o.m, b: o.b, xMin: params.xMin, xMax: params.xMax }, // drawn by views/graph.js
-    }));
-    const correctGraph = graphOptions.find((o) => o.key === "correct");
-    const represent = {
-      id: "represent",
-      instructions: "Turn the pattern into an equation, then find its graph.",
-      show: ["story"],
-      // The formula appears once the equation is typed; the big graph only after the right pick
-      revealAfter: { "represent-equation": ["formula"], "represent-match": ["graph"] },
-      items: [
-        {
+    // The format is picked ONCE per scenario (see REPRESENT_FORMATS at the top):
+    //   write  -> type the equation                       (story -> equation)
+    //   choose -> pick the equation from 4                (story -> equation)
+    //   both   -> type the equation, then pick its graph  (story -> equation, equation -> graph)
+    // Each item has a `move`, and no move is asked twice in one scenario.
+    const setting = context.settings?.representFormat ?? this.settings.representFormat;
+    if (setting !== "random" && !REPRESENT_FORMATS.includes(setting)) {
+      throw new Error(`Unknown representFormat "${setting}". Use "random" or one of: ${REPRESENT_FORMATS.join(", ")}`);
+    }
+    const format = setting === "random" ? REPRESENT_FORMATS[Math.floor(rng() * REPRESENT_FORMATS.length)] : setting;
+
+    const writeItem = () => ({
           id: "represent-equation",
+          move: "story-to-equation",
           type: "pair",
           prompt: "Write the equation for this story.",
           parts: ["y =", "x +"], // the view puts an input after each part
@@ -307,27 +312,75 @@ export default {
             },
             `The change per step is what you found in Notice. The starting amount is \\(y\\) when \\(x = 0\\), which is ${y(0)}.`,
           ],
-        },
-        {
-          id: "represent-match",
-          type: "choice",
-          display: "graphs", // the view draws each option's `graph` instead of text
-          prompt: "Which graph matches your equation?",
-          options: graphOptions,
-          // Size the shared axes to every line except "swapped" (y = bx + m). Its slope is b,
-          // often 30+, which would squash the other three into flat look-alikes. When it is
-          // steep it just runs off the top edge, which is still easy to tell apart.
-          graphFit: graphOptions.filter((o) => o.key !== "swapped").map((o) => o.graph),
-          check: (key) => key === "correct",
-          answerText: correctGraph.text,
-          hints: [
-            `Look where each line crosses the \\(y\\)-axis (at \\(x = 0\\)). Your equation gives \\(y = ${y(0)}\\) there.`,
-            `Your line goes through \\((0, ${y(0)})\\) and \\((${params.xMax}, ${y(params.xMax)})\\). ` +
-              `It goes ${m > 0 ? "up" : "down"} from left to right.`,
-          ],
-        },
-      ],
+    });
+
+    // Story -> equation, multiple choice: correct, swapped, wrong sign, no intercept
+    const chooseItem = () => ({
+      ...choiceItem({
+        id: "represent-choose",
+        prompt: "Which equation matches this story?",
+        options: equationOptions(m, b).map((o) => ({ key: o.key, text: `\\(${latex({ m: o.m, b: o.b })}\\)` })),
+        correctKey: "correct",
+        hints: [
+          "Test an option: put in \\(x = 0\\) and \\(x = 1\\). Does it give the same \\(y\\) as your table?",
+          `The right equation gives \\(y = ${y(0)}\\) when \\(x = 0\\), and \\(y = ${y(1)}\\) when \\(x = 1\\).`,
+        ],
+        rng,
+      }),
+      move: "story-to-equation",
+    });
+
+    // Equation -> graph: the same four kinds of lines, drawn as small graphs.
+    // Shuffled first, THEN named A–D, so the letter never hints at the answer.
+    // Extra rule for graphs: no wrong line that looks just like the right one.
+    const graphItem = () => {
+      const tooClose = looksLikeLine(m, b, params.xMin, params.xMax);
+      const graphOptions = shuffle(equationOptions(m, b, tooClose), rng).map((o, i) => ({
+        key: o.key,
+        text: `Graph ${"ABCD"[i]}`,
+        graph: { m: o.m, b: o.b, xMin: params.xMin, xMax: params.xMax }, // drawn by views/graph.js
+      }));
+      return {
+        id: "represent-match",
+        move: "equation-to-graph",
+        type: "choice",
+        display: "graphs", // the view draws each option's `graph` instead of text
+        prompt: "Which graph matches your equation?",
+        options: graphOptions,
+        // Size the shared axes to every line except "swapped" (y = bx + m). Its slope is b,
+        // often 30+, which would squash the other three into flat look-alikes. When it is
+        // steep it just runs off the top edge, which is still easy to tell apart.
+        graphFit: graphOptions.filter((o) => o.key !== "swapped").map((o) => o.graph),
+        check: (key) => key === "correct",
+        answerText: graphOptions.find((o) => o.key === "correct").text,
+        hints: [
+          `Look where each line crosses the \\(y\\)-axis (at \\(x = 0\\)). Your equation gives \\(y = ${y(0)}\\) there.`,
+          `Your line goes through \\((0, ${y(0)})\\) and \\((${params.xMax}, ${y(params.xMax)})\\). ` +
+            `It goes ${m > 0 ? "up" : "down"} from left to right.`,
+        ],
+      };
     };
+
+    // Only the chosen format is built (functions), so unused items don't use up random numbers
+    const representByFormat = {
+      write: () => ({
+        instructions: "Turn the pattern into an equation.",
+        items: [writeItem()],
+        revealAfter: { "represent-equation": ["formula", "graph"] },
+      }),
+      choose: () => ({
+        instructions: "Find the equation that matches the story.",
+        items: [chooseItem()],
+        revealAfter: { "represent-choose": ["formula", "graph"] },
+      }),
+      both: () => ({
+        instructions: "Turn the pattern into an equation, then find its graph.",
+        items: [writeItem(), graphItem()],
+        // The formula appears once the equation is typed; the big graph only after the right pick
+        revealAfter: { "represent-equation": ["formula"], "represent-match": ["graph"] },
+      }),
+    };
+    const represent = { id: "represent", show: ["story"], format, ...representByFormat[format]() };
 
     // ---- 4. Solve ----
     const question = scenario?.question
@@ -429,6 +482,10 @@ export default {
       ],
     };
 
-    return [explore, notice, represent, solve, explain, transfer];
+    // Every log entry from this scenario records which Represent format was used
+    return [explore, notice, represent, solve, explain, transfer].map((step) => ({
+      ...step,
+      logFields: { representFormat: format },
+    }));
   },
 };

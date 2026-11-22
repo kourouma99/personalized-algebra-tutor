@@ -13,6 +13,7 @@ import {
   canVisit,
   markVisited,
   stepStatus,
+  startEntry,
   visibleRepresentations,
 } from "./core/flowEngine.js";
 import { interests } from "./data/interests.js";
@@ -118,6 +119,7 @@ function startFlow() {
   const values = concept.storyValues ? concept.storyValues(params) : params;
   const scenario = getScenario(concept.id, interest, values.variant);
   setState({ flowRun: createRun(concept.flow, concept, params, { scenario, values }), step: 0 });
+  record([startEntry(state.flowRun, { concept: concept.id, interest, params })]);
 }
 
 // Keep every answer, hint request, revealed answer and skip in the log (future research data)
