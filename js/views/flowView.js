@@ -17,6 +17,7 @@ import {
   isStepSkipped,
   canMoveOn,
   canRevealAnswer,
+  canAnswerAgain,
   referenceTable,
   visibleItems,
   HINTS_BEFORE_ANSWER,
@@ -55,7 +56,14 @@ function feedbackNode(feedback, wrongText = "Not quite, try again.") {
   if (!feedback) return node;
 
   node.classList.add(`is-${feedback.kind}`);
-  if (feedback.kind === "correct") node.textContent = feedback.text ?? "Correct!";
+  if (feedback.kind === "correct") {
+    const text = feedback.text ?? (feedback.again ? "Also correct!" : "Correct!");
+    renderTextWithMath(node, feedback.exactText ? `${text} Exact value: ${feedback.exactText}` : text);
+  }
+  if (feedback.kind === "wrong-again") {
+    node.classList.add("is-wrong");
+    node.textContent = "That one isn't equal to the answer. Your earlier answer was right.";
+  }
   if (feedback.kind === "invalid") node.textContent = "Type a number, like 12, -3, 2.5 or 12/7.";
   if (feedback.kind === "wrong") node.textContent = wrongText;
   if (feedback.kind === "revealed") renderTextWithMath(node, `The answer is ${feedback.answerText}. Let's keep going.`);
@@ -157,8 +165,11 @@ function renderNumber(item, progress, run, handlers) {
   const form = el("form", "flow-item");
   const row = el("div", "flow-row");
   const input = numberInput("Your answer", progress.lastAnswer);
-  input.disabled = progress.done;
-  row.append(input, checkButton(progress.done));
+  // Still open after a correct answer (try another form); locked only after "Show answer"
+  const locked = progress.done && !canAnswerAgain(item, progress);
+  input.disabled = locked;
+  if (progress.done) input.dataset.done = "true"; // so the cursor goes to the next open box
+  row.append(input, checkButton(locked));
 
   form.addEventListener("submit", (event) => {
     event.preventDefault(); // stops the page from reloading
@@ -178,15 +189,17 @@ function renderPair(item, progress, run, handlers) {
   const form = el("form", "flow-item");
   const row = el("div", "flow-row flow-equation");
   const last = Array.isArray(progress.lastAnswer) ? progress.lastAnswer : [];
+  const locked = progress.done && !canAnswerAgain(item, progress);
   const inputs = item.parts.map((part, i) => {
     const label = el("span");
     renderMath(label, part);
     const input = numberInput(i === 0 ? "Number in front of x" : "Number added", last[i] ?? "");
-    input.disabled = progress.done;
+    input.disabled = locked;
+    if (progress.done) input.dataset.done = "true";
     row.append(label, input);
     return input;
   });
-  row.appendChild(checkButton(progress.done));
+  row.appendChild(checkButton(locked));
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -397,6 +410,6 @@ export function renderFlow(state, handlers) {
   // Put the cursor in the first empty box, unless the student is typing somewhere else
   const active = document.activeElement;
   if (!active || active === document.body || container.contains(active) || !active.isConnected) {
-    container.querySelector("input:not([disabled])")?.focus({ preventScroll: true });
+    container.querySelector("input:not([disabled]):not([data-done])")?.focus({ preventScroll: true });
   }
 }

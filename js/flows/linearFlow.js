@@ -513,6 +513,8 @@ export default {
           prompt: `\\(f\\left(\\frac{${numerator}}{${denominator}}\\right) = ?\\)`,
           answer: y(numerator / denominator),
           answerText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\) (about ${y(numerator / denominator).toFixed(2)})`,
+          // Shown as "Exact value: …" when a decimal like 16.43 is accepted
+          exactText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\)`,
           tolerance: DECIMAL_TOLERANCE,
           hints: [
             `\\(y\\) ${change(m)} for each whole step of \\(x\\). Work out how much it goes ${m > 0 ? "up" : "down"} ` +

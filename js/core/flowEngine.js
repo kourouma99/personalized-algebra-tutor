@@ -34,6 +34,7 @@
       options: [{ key, text }],        // choice items only
       check(answer),                   // true, false, or null (= unreadable, not counted)
       answerText: "…",                 // shown when the student asks for the answer
+      answer: 16.43, exactText: "…",   // number items: the value, and its exact form if not whole
       hints: [nudge, specific],        // each a string or (ctx) => string, see requestHint
       group: "notice-table",           // optional, see `tables`
     }
@@ -181,7 +182,9 @@ export function startEntry(run, extra = {}) {
 /*
   Checks one answer and updates that item's progress.
   Returns { status, entry }:
-    status: "correct" | "wrong" | "invalid" (unreadable, not counted) | "ignored" (already done)
+    status: "correct" | "wrong" | "invalid" (unreadable, not counted) |
+            "correct-again" | "wrong-again" (another answer after a correct one) |
+            "ignored" (done and can't be answered again, see canAnswerAgain)
     entry:  a log record for state.responses, or null if nothing was counted
 */
 export function submitAnswer(run, stepIndex, itemId, answer) {
@@ -189,7 +192,7 @@ export function submitAnswer(run, stepIndex, itemId, answer) {
   if (!item) throw new Error(`No item "${itemId}" in step ${stepIndex}`);
 
   const progress = getProgress(run, itemId);
-  if (progress.done) return { status: "ignored", entry: null };
+  if (progress.done) return answerAgain(run, stepIndex, item, progress, answer);
 
   const result = item.check(answer);
   progress.lastAnswer = answer;
@@ -201,7 +204,7 @@ export function submitAnswer(run, stepIndex, itemId, answer) {
   progress.attempts += 1;
   if (result) {
     progress.done = true;
-    progress.feedback = { kind: "correct" };
+    progress.feedback = { kind: "correct", exactText: exactTextFor(item, answer) };
   } else {
     progress.feedback = { kind: "wrong" };
     if (item.type === "choice") progress.wrongKeys.push(answer);
@@ -216,6 +219,48 @@ export function submitAnswer(run, stepIndex, itemId, answer) {
     hintsUsed: progress.hints.length,
   });
   return { status: result ? "correct" : "wrong", entry };
+}
+
+// Typed boxes (number, pair) stay open after a correct answer so the student can try
+// another equivalent form (e.g. 115/7 after 16.43). Not for multiple choice, table cells,
+// or anything whose answer was revealed with "Show answer".
+export function canAnswerAgain(item, progress) {
+  return progress.done && !progress.revealed && !progress.autoFilled && !item.group && item.type !== "choice";
+}
+
+// A decimal accepted for a non-whole answer: also show the exact value, if the flow gave one
+function exactTextFor(item, answer) {
+  const typedDecimal = typeof answer === "string" && !answer.includes("/");
+  const nonWhole = typeof item.answer === "number" && !Number.isInteger(item.answer);
+  return typedDecimal && nonWhole ? item.exactText ?? null : null;
+}
+
+// Another answer on an item that is already correct. Checked the same way and logged,
+// but it never "un-finishes" the item.
+function answerAgain(run, stepIndex, item, progress, answer) {
+  if (!canAnswerAgain(item, progress)) return { status: "ignored", entry: null };
+
+  const result = item.check(answer);
+  progress.lastAnswer = answer;
+  if (result === null) {
+    progress.feedback = { kind: "invalid" };
+    return { status: "invalid", entry: null };
+  }
+  progress.reanswers = (progress.reanswers ?? 0) + 1;
+  progress.feedback = result
+    ? { kind: "correct", again: true, exactText: exactTextFor(item, answer) }
+    : { kind: "wrong-again" };
+
+  const entry = logEntry(run, stepIndex, {
+    type: "answer",
+    item: item.id,
+    answer,
+    correct: Boolean(result),
+    reanswer: true, // the item was already correct
+    attempts: progress.attempts,
+    hintsUsed: progress.hints.length,
+  });
+  return { status: result ? "correct-again" : "wrong-again", entry };
 }
 
 /*
