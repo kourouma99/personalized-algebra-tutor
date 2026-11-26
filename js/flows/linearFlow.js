@@ -22,6 +22,9 @@
 */
 
 import { parseNumber, numbersMatch, fractionLatex } from "../core/answerCheck.js";
+import { shuffle, lower, fill, choiceItem, numberItem, nearestRow } from "./flowHelpers.js";
+
+export { shuffle, nearestRow }; // re-exported: older tests import them from here
 
 // x = 1 and 2 are given; the student fills in 0, 5 and 8. Finding y at x = 0 means
 // working BACKWARDS one step, which is how they discover the starting amount b.
@@ -37,17 +40,7 @@ const DECIMAL_TOLERANCE = 0.01; // for the transfer step, where decimals like 1.
 // Question formats for the Represent step (the setting can also be "random")
 export const REPRESENT_FORMATS = ["write", "choose", "both"];
 
-// ---------- small helpers (exported so they can be tested in Node) ----------
-
-// Fisher–Yates shuffle that uses the given random function, returns a new array
-export function shuffle(list, rng = Math.random) {
-  const out = [...list];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
+// ---------- linear helpers (exported so they can be tested in Node) ----------
 
 /*
   The four equation options for "Which equation matches this story?":
@@ -99,49 +92,6 @@ export function looksLikeLine(m, b, xMin, xMax, minGap = 0.08) {
   };
 }
 
-// "Games played" -> "games played", so labels fit inside a sentence
-function lower(text) {
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-// Replace {key} with values[key] (same rule as views/scenario.js)
-function fill(text, values) {
-  return text.replace(/\{(\w+)\}/g, (match, key) => (key in values ? String(values[key]) : match));
-}
-
-function numberCheck(answer, tolerance) {
-  return (raw) => {
-    const value = parseNumber(raw);
-    return value === null ? null : numbersMatch(value, answer, tolerance);
-  };
-}
-
-function choiceItem({ id, prompt, options, correctKey, hints, rng }) {
-  const correct = options.find((o) => o.key === correctKey);
-  return {
-    id,
-    type: "choice",
-    prompt,
-    options: shuffle(options, rng),
-    check: (key) => key === correctKey,
-    answerText: correct.text,
-    hints,
-  };
-}
-
-function numberItem({ id, prompt, answer, hints, answerText, tolerance, ...rest }) {
-  return {
-    id,
-    type: "number",
-    prompt,
-    answer, // kept so a later step can show the solved value (e.g. the reference table)
-    check: numberCheck(answer, tolerance),
-    answerText: answerText ?? `\\(${answer}\\)`,
-    hints,
-    ...rest,
-  };
-}
-
 /*
   The x for the Solve question. Story amounts can't go negative (validate() has the
   same rule), so a falling line limits how far out we can go:
@@ -173,19 +123,6 @@ export function change(n, tense = "present") {
   if (n > 0) return `${up} by ${n}`;
   if (n < 0) return `${down} by ${-n}`;
   return same;
-}
-
-// The known row closest to x (ties go to the smaller x). Rows are { x, y }.
-export function nearestRow(rows, x) {
-  let best = null;
-  for (const row of rows) {
-    if (row.x === x) continue;
-    const distance = Math.abs(row.x - x);
-    if (!best || distance < Math.abs(best.x - x) || (distance === Math.abs(best.x - x) && row.x < best.x)) {
-      best = row;
-    }
-  }
-  return best;
 }
 
 /*

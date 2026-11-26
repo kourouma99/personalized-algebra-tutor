@@ -200,7 +200,7 @@ function renderNumber(item, progress, run, handlers) {
   return withDev(form, [item.id], run, handlers);
 }
 
-// "y = [ ]x + [ ]": one input after each part
+// "y = [ ]x + [ ]": one input after each part (item.parts), then item.after if given
 function renderPair(item, progress, run, handlers) {
   const form = el("form", "flow-item");
   const row = el("div", "flow-row flow-equation");
@@ -215,6 +215,12 @@ function renderPair(item, progress, run, handlers) {
     row.append(label, input);
     return input;
   });
+  // Optional text after the last box, e.g. ")^x" in y = [ ]( [ ] )^x
+  if (item.after) {
+    const tail = el("span");
+    renderMath(tail, item.after);
+    row.appendChild(tail);
+  }
   row.appendChild(checkButton(locked));
 
   form.addEventListener("submit", (event) => {

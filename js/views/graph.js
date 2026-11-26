@@ -149,15 +149,19 @@ export function clearMiniGraphs() {
 /*
   Draws one small graph per entry, all with the SAME axes so they can be compared.
   elementIds[i] is the id of an empty element already on the page; paramsList[i]
-  are the concept params for that graph. Only a line and the axes are drawn:
+  are the concept params for that graph (or { concept, params } for another curve). Only a line and the axes are drawn:
   no labels, no points, nothing that names the equation.
   fitList (optional): the params the shared axes are sized to. Lines outside
   that area are simply cut off at the edge. Defaults to all of paramsList.
   Returns the shared bounding box [left, top, right, bottom] (handy for tests).
 */
 export function renderMiniGraphs(elementIds, concept, paramsList, fitList = paramsList) {
-  const curves = paramsList.map((params) => sampleCurve(concept, params));
-  const fit = fitList.map((params) => sampleCurve(concept, params));
+  // An entry can also be { concept, params } to draw a different kind of curve
+  // (e.g. a straight-line look-alike among exponential options)
+  const sample = (entry) =>
+    entry && entry.concept && entry.params ? sampleCurve(entry.concept, entry.params) : sampleCurve(concept, entry);
+  const curves = paramsList.map(sample);
+  const fit = fitList.map(sample);
   const box = boundingBox(fit.flatMap((c) => c.xs), fit.flatMap((c) => c.ys));
 
   elementIds.forEach((id, i) => {
