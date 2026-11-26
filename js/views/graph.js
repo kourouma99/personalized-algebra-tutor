@@ -69,6 +69,59 @@ function boundingBox(xs, ys) {
   return [xMin - padX, yMax + padY, xMax + padX, yMin - padY];
 }
 
+// Hover style for table points: JSXGraph's default hover colour is a pale blue that
+// is hard to see, so hovered points turn dark, grow, and show their coordinates.
+const POINT_SIZE = 2;
+const HOVER_SIZE = 5;
+const HOVER_COLOR = "#1e3a8a"; // dark blue
+
+// "16.43" instead of "16.428571428571427"; whole numbers stay as they are
+function formatCoordinate(v) {
+  return String(Number(v.toFixed(2)));
+}
+
+/*
+  One table point that, on hover, gets darker and bigger and shows "(x, y)".
+  The label is a hidden text element next to the point; it is placed on the
+  inner side of the point so it doesn't fall off the edge of the graph.
+*/
+function addHoverPoint(board, p, [left, top, right, bottom]) {
+  const point = board.create("point", [p.x, p.y], {
+    fixed: true,
+    name: "",
+    size: POINT_SIZE,
+    highlightFillColor: HOVER_COLOR,
+    highlightStrokeColor: HOVER_COLOR,
+    highlightFillOpacity: 1,
+    highlightStrokeOpacity: 1,
+  });
+
+  const onRight = p.x > (left + right) / 2;
+  const onTop = p.y > (top + bottom) / 2;
+  const dx = (right - left) * 0.02 * (onRight ? -1 : 1);
+  const dy = (top - bottom) * 0.04 * (onTop ? -1 : 1);
+  const label = board.create("text", [p.x + dx, p.y + dy, `(${formatCoordinate(p.x)}, ${formatCoordinate(p.y)})`], {
+    visible: false,
+    fixed: true,
+    highlight: false,
+    anchorX: onRight ? "right" : "left",
+    anchorY: onTop ? "top" : "bottom",
+    fontSize: 14,
+    strokeColor: HOVER_COLOR,
+    cssStyle: "font-weight: 600; background: rgba(255, 255, 255, 0.85); padding: 1px 4px; border-radius: 4px;",
+  });
+
+  point.on("over", () => {
+    point.setAttribute({ size: HOVER_SIZE });
+    label.setAttribute({ visible: true });
+  });
+  point.on("out", () => {
+    point.setAttribute({ size: POINT_SIZE });
+    label.setAttribute({ visible: false });
+  });
+  return { point, label };
+}
+
 // 101 points from xMin to xMax, every y computed by concept.evaluate
 function sampleCurve(concept, params, steps = 100) {
   const xs = [];
@@ -146,9 +199,7 @@ export function renderGraph(state, labels) {
   const curve = sampleCurve(state.concept, state.params);
   graphBoard.create("curve", [curve.xs, curve.ys], { strokeWidth: 2 });
 
-  for (const p of points) {
-    graphBoard.create("point", [p.x, p.y], { fixed: true, name: "", size: 2 });
-  }
+  for (const p of points) addHoverPoint(graphBoard, p, [left, top, right, bottom]);
 
   if (labels) {
     graphBoard.create("text", [right, bottom, labels.x], { anchorX: "right", anchorY: "bottom", fixed: true });
