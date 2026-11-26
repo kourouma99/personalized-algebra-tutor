@@ -116,6 +116,32 @@ export function chooseSolveX(params, y, rng = Math.random) {
 
 const pickSolveX = (params, y, rng) => chooseSolveX(params, y, rng).x;
 
+/*
+  Falling lines: the target y for "when will y reach …?", chosen so the answer x is a
+  whole number where y is still >= 0 (the story's valid range):
+    1. y = 0, if b is divisible by |m| (x = b / |m|, the moment it runs out)
+    2. else y at a random whole x past the graph (xMax + 1 up to the last x with y >= 0)
+    3. else y at one of the small x values not in the table
+  Returns { x, target, kind: "zero" | "past-graph" | "small" }.
+*/
+export function chooseReverseTarget(params, y, rng = Math.random) {
+  const { m, b } = params;
+  const pick = (list) => list[Math.floor(rng() * list.length)];
+  const lastX = Math.floor(b / Math.abs(m)); // y(lastX) >= 0 > y(lastX + 1)
+
+  if (b % Math.abs(m) === 0) return { x: lastX, target: 0, kind: "zero" };
+
+  const past = [];
+  for (let x = params.xMax + 1; x <= lastX; x++) past.push(x);
+  if (past.length) {
+    const x = pick(past);
+    return { x, target: y(x), kind: "past-graph" };
+  }
+  const small = SMALL_SOLVE_XS.filter((x) => x <= lastX && x >= params.xMin);
+  const x = small.length ? pick(small) : params.xMax;
+  return { x, target: y(x), kind: "small" };
+}
+
 // Sign-aware wording for a change: "goes up by 4", "goes down by 4", "stays the same".
 // Hints never say "add -4".
 export function change(n, tense = "present") {
@@ -379,29 +405,58 @@ export default {
     const represent = { id: "represent", show: ["story"], format, ...representByFormat[format]() };
 
     // ---- 4. Solve ----
-    const question = scenario?.question
-      ? fill(scenario.question, { ...(context.values ?? params), qx })
-      : `What is \\(y\\) when \\(x = ${qx}\\)?`;
+    // Rising lines: "what is y after a big x?" (forward). Falling lines: "when will y
+    // reach this target?" (reverse, solving for x), because a falling amount runs out
+    // long before a big x. The type is logged with every entry (solveQuestion).
+    const values = { ...(context.values ?? params) };
+    let solveQuestion, solveItem;
+    if (m < 0) {
+      const reverse = chooseReverseTarget(params, y, rng);
+      const T = reverse.target;
+      const stillToGo = b - T; // how far y has to come down, always > 0
+      solveQuestion = "reverse";
+      solveItem = numberItem({
+        id: "solve-question",
+        prompt: scenario?.reverseQuestion
+          ? fill(scenario.reverseQuestion, { ...values, target: T })
+          : scenario
+            ? `After how many ${units.x} will ${Y} be ${T}?`
+            : `For what \\(x\\) is \\(y = ${T}\\)?`,
+        answer: reverse.x,
+        qx: reverse.x, // the answer is an x here
+        target: T,
+        reverseKind: reverse.kind,
+        hints: [
+          `Put \\(y = ${T}\\) into your equation: \\(${latex(params).replace(/^y/, String(T))}\\). Then solve for \\(x\\).`,
+          `Start at ${b}. Each time \\(x\\) goes up by 1, \\(y\\) goes down by ${Math.abs(m)}. ` +
+            `To get down to ${T}, \\(y\\) has to go down by ${stillToGo} in total: \\(${stillToGo} \\div ${Math.abs(m)}\\).`,
+        ],
+      });
+    } else {
+      solveQuestion = "forward";
+      solveItem = numberItem({
+        id: "solve-question",
+        prompt: scenario?.question ? fill(scenario.question, { ...values, qx }) : `What is \\(y\\) when \\(x = ${qx}\\)?`,
+        answer: y(qx),
+        qx,
+        hints: [
+          `Put \\(x = ${qx}\\) into your equation and calculate \\(y\\).`,
+          stepsHint(qx),
+        ],
+      });
+    }
     const solve = {
       id: "solve",
-      instructions: "Use your equation to answer the story's question.",
+      instructions: m < 0
+        ? "Use your equation to work out when the story reaches a value."
+        : "Use your equation to answer the story's question.",
       show: ["story", "formula", "graph"],
       // Formula and graph give away Represent, so they wait until Represent is complete
       // (answered or revealed). Until then: the story and the student's own table.
       requires: { formula: "represent", graph: "represent" },
       referenceTable: "notice-table",
-      items: [
-        numberItem({
-          id: "solve-question",
-          prompt: question,
-          answer: y(qx),
-          qx,
-          hints: [
-            `Put \\(x = ${qx}\\) into your equation and calculate \\(y\\).`,
-            stepsHint(qx),
-          ],
-        }),
-      ],
+      solveQuestion,
+      items: [solveItem],
     };
 
     // ---- 5. Explain ----
@@ -495,7 +550,7 @@ export default {
     // Every log entry from this scenario records which Represent format was used
     return [explore, notice, represent, solve, explain, transfer].map((step) => ({
       ...step,
-      logFields: { representFormat: format },
+      logFields: { representFormat: format, solveQuestion },
     }));
   },
 };

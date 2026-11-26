@@ -12,8 +12,10 @@
   own scenarios here later (e.g. "constant-velocity").
   Interest ids must match data/interests.js.
 
-  Linear questions use {qx}: the guided flow (flows/linearFlow.js) picks that
-  x in code, so the answer is never already in the student's table.
+  Linear questions use {qx}: the guided flow (flows/linearFlow.js) picks that x in
+  code, so the answer is never already in the student's table. Falling (decrease)
+  linear stories also have a reverseQuestion with {target} ("when will it reach …?"),
+  which the flow asks instead; the target is also picked in code.
 */
 
 export const sampleScenarios = {
@@ -30,6 +32,7 @@ export const sampleScenarios = {
         title: "Practice Balls",
         story: "Your team begins the season with \\({b}\\) practice balls. Every game, \\({absM}\\) balls get lost or worn out. After \\(x\\) games, you have \\(y\\) balls left.",
         question: "How many balls will be left after {qx} games?",
+        reverseQuestion: "After how many games will there be {target} balls left?",
         labels: { x: "Games played", y: "Balls left" },
         units: { x: "games", y: "balls" },
       },
@@ -46,6 +49,7 @@ export const sampleScenarios = {
         title: "Studio Time",
         story: "You booked \\({b}\\) hours of studio time. Each day of recording uses \\({absM}\\) hours. After \\(x\\) days, you have \\(y\\) hours left.",
         question: "How many hours will be left after {qx} days?",
+        reverseQuestion: "After how many days of recording will {target} hours be left?",
         labels: { x: "Days recording", y: "Hours left" },
         units: { x: "days", y: "hours" },
       },
@@ -62,6 +66,7 @@ export const sampleScenarios = {
         title: "Health Bar",
         story: "Your character starts with \\({b}\\) health points and loses \\({absM}\\) every minute in the storm. After \\(x\\) minutes, \\(y\\) health points are left.",
         question: "How much health will be left after {qx} minutes?",
+        reverseQuestion: "After how many minutes will {target} health points be left?",
         labels: { x: "Minutes in storm", y: "Health left" },
         units: { x: "minutes", y: "health points" },
       },
@@ -78,6 +83,7 @@ export const sampleScenarios = {
         title: "Bird Feeder",
         story: "A bird feeder holds \\({b}\\) ounces of seed. Birds eat \\({absM}\\) ounces each day. After \\(x\\) days, \\(y\\) ounces are left.",
         question: "How much seed will be left after {qx} days?",
+        reverseQuestion: "After how many days will {target} ounces of seed be left?",
         labels: { x: "Days", y: "Ounces of seed left" },
         units: { x: "days", y: "ounces" },
       },
