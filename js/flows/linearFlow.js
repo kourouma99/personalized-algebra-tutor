@@ -23,8 +23,10 @@
 
 import { parseNumber, numbersMatch, fractionLatex } from "../core/answerCheck.js";
 
-const TABLE_XS = [0, 1, 2, 5, 8]; // x = 0 and 1 are given, the rest the student fills in
-const GIVEN_XS = [0, 1];
+// x = 1 and 2 are given; the student fills in 0, 5 and 8. Finding y at x = 0 means
+// working BACKWARDS one step, which is how they discover the starting amount b.
+const TABLE_XS = [0, 1, 2, 5, 8];
+const GIVEN_XS = [1, 2];
 const SOLVE_XS = [3, 4, 6, 7, 9, 10]; // not in the table, so the student must use the equation
 const TRANSFER_XS = [2, 12];
 const TRANSFER_FRACTION = { numerator: 3, denominator: 7 };
@@ -163,8 +165,10 @@ export function nearestRow(rows, x) {
 /*
   Targeted hints for one missing table cell, computed from the rows the student
   can already see (the given rows plus cells already solved):
-    1. "From x = 5 to x = 8, x goes up by 3. How much should y go up?"
-    2. the same jump, spelled out with the change per step from x = 0 to x = 1
+    1. "From x = 5 to x = 8, x goes up by 3. How should y change?"
+       "From x = 1 to x = 0, x goes down by 1. How should y change?" (backwards)
+    2. the same jump spelled out, sign-aware: which way y moves per step (read from
+       the two given rows), and whether to add or subtract from the known value
 */
 export function tableCellHints(x, givenRows, cells, y) {
   const knownRows = (solved) => [
@@ -183,15 +187,24 @@ export function tableCellHints(x, givenRows, cells, y) {
   return [
     ({ solved }) => {
       const { from, steps, dir } = jump(solved);
-      return `From \\(x = ${from.x}\\) to \\(x = ${x}\\), \\(x\\) goes ${dir} by ${steps}. How much should \\(y\\) change?`;
+      return `From \\(x = ${from.x}\\) to \\(x = ${x}\\), \\(x\\) goes ${dir} by ${steps}. How should \\(y\\) change?`;
     },
     ({ solved }) => {
       const { from, steps, dx } = jump(solved);
       // y moves up if the per-step direction and the x direction agree, down otherwise
       const total = perStep * dx;
-      const action = total > 0 ? "add it to" : "subtract it from";
-      return `Each time \\(x\\) goes up by 1, \\(y\\) goes ${yDir} by the same amount (look from \\(x = ${first.x}\\) to \\(x = ${second.x}\\)). ` +
-        `Multiply that amount by ${steps}, then ${action} \\(y = ${from.y}\\), the value at \\(x = ${from.x}\\).`;
+      const yMoves = total > 0 ? "up" : "down";
+      const action = total > 0 ? "add" : "subtract";
+      const pattern =
+        `Each time \\(x\\) goes up by 1, \\(y\\) goes ${yDir} by the same amount ` +
+        `(look from \\(x = ${first.x}\\) to \\(x = ${second.x}\\)).`;
+      // Going backwards undoes steps, so y moves the opposite way of the pattern
+      const backwards = dx < 0
+        ? ` Going back from \\(x = ${from.x}\\) to \\(x = ${x}\\) undoes ${steps === 1 ? "one step" : `${steps} steps`}, so \\(y\\) goes ${yMoves}.`
+        : "";
+      const amount = steps === 1 ? "that amount" : `that amount times ${steps}`;
+      const verb = action === "add" ? `add ${amount} to` : `subtract ${amount} from`;
+      return `${pattern}${backwards} Start at \\(y = ${from.y}\\) (the value at \\(x = ${from.x}\\)) and ${verb} it.`;
     },
   ];
 }
@@ -267,7 +280,7 @@ export default {
           prompt: "Fill in the missing values of \\(y\\).",
           columns: { x: labels.x, y: labels.y },
           given: givenRows,
-          // First two missing cells right on the first try -> fill in the rest
+          // First two missing cells (x = 0 and x = 5) right on the first try -> fill in x = 8
           autoFill: { after: 2, message: "Nice, you've got the pattern!" },
         },
       },
@@ -287,8 +300,9 @@ export default {
           prompt: `How much does \\(y\\) change when \\(x\\) goes up by 1?`,
           answer: m,
           hints: [
-            `Compare the rows for \\(x = 0\\) and \\(x = 1\\) in your table.`,
-            `From \\(x = 0\\) to \\(x = 1\\), \\(y\\) goes from ${y(0)} to ${y(1)}. Subtract: \\(${y(1)} - ${y(0)}\\). ` +
+            `Compare two rows next to each other in your table, like \\(x = ${GIVEN_XS[0]}\\) and \\(x = ${GIVEN_XS[1]}\\).`,
+            `From \\(x = ${GIVEN_XS[0]}\\) to \\(x = ${GIVEN_XS[1]}\\), \\(y\\) goes from ${y(GIVEN_XS[0])} to ${y(GIVEN_XS[1])}. ` +
+              `Subtract: \\(${y(GIVEN_XS[1])} - ${y(GIVEN_XS[0])}\\). ` +
               (m < 0 ? "Since \\(y\\) goes down, the answer is a negative number." : "Since \\(y\\) goes up, the answer is a positive number."),
           ],
         }),

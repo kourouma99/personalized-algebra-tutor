@@ -221,11 +221,12 @@ function renderTable(table, items, run, groupId, handlers) {
   const thead = el("thead");
   thead.appendChild(headRow);
 
-  const tbody = el("tbody");
+  // Given rows and blank cells are drawn together, sorted by x (x = 0 comes first)
+  const rows = [];
   for (const row of table.given) {
     const tr = el("tr");
     tr.append(el("td", "", String(row.x)), el("td", "", String(row.y)));
-    tbody.appendChild(tr);
+    rows.push({ x: row.x, tr });
   }
 
   const inputs = [];
@@ -250,8 +251,10 @@ function renderTable(table, items, run, groupId, handlers) {
       yCell.appendChild(input);
     }
     tr.append(el("td", "", String(item.x)), yCell);
-    tbody.appendChild(tr);
+    rows.push({ x: item.x, tr });
   }
+  const tbody = el("tbody");
+  rows.sort((a, b) => a.x - b.x).forEach((r) => tbody.appendChild(r.tr));
   tableEl.append(thead, tbody);
 
   form.addEventListener("submit", (event) => {

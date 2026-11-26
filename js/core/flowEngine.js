@@ -159,7 +159,7 @@ export function referenceTable(run, groupId) {
         const p = getProgress(run, it.id);
         return { x: it.x, y: p.done ? it.answer : null, given: false };
       }),
-  ];
+  ].sort((a, b) => a.x - b.x);
   return { table, rows };
 }
 
