@@ -327,6 +327,7 @@ export default {
           type: "pair",
           prompt: "Write the equation for this story.",
           parts: ["y =", "x +"], // the view puts an input after each part
+          autoAnswer: [String(m), String(b)], // dev mode only
           check: (raw) => {
             const [slope, intercept] = (raw ?? []).map(parseNumber);
             if (slope === null || intercept === null || slope === undefined || intercept === undefined) return null;
@@ -515,6 +516,7 @@ export default {
           answerText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\) (about ${y(numerator / denominator).toFixed(2)})`,
           // Shown as "Exact value: …" when a decimal like 16.43 is accepted
           exactText: `\\(${fractionLatex(m * numerator + b * denominator, denominator)}\\)`,
+          autoAnswer: `${m * numerator + b * denominator}/${denominator}`, // dev mode only
           tolerance: DECIMAL_TOLERANCE,
           hints: [
             `\\(y\\) ${change(m)} for each whole step of \\(x\\). Work out how much it goes ${m > 0 ? "up" : "down"} ` +

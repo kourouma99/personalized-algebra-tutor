@@ -13,6 +13,7 @@ import {
   markVisited,
   stepStatus,
   startEntry,
+  autoAnswerFor,
   visibleRepresentations,
 } from "./core/flowEngine.js";
 import { interests } from "./data/interests.js";
@@ -29,6 +30,10 @@ import { getConcept, listConcepts } from "./core/conceptRegistry.js";
 
 
 const MAX_ATTEMPTS = 100;
+
+// Dev mode for testing (open the page with ?dev=1): every step is clickable in the step bar
+// and every item gets an "Auto-answer" button. Never shown without ?dev=1.
+const DEV = new URLSearchParams(window.location.search).get("dev") === "1";
 
 // Keep generating until the params pass every check (with a safety limit)
 function generateValidParams(concept) {
@@ -65,7 +70,7 @@ function refreshAll() {
     state,
     run && {
       status: (i) => stepStatus(run, i),
-      canVisit: (i) => canVisit(run, i),
+      canVisit: (i) => canVisit(run, i, DEV),
       onSelect: goToStep,
     }
   );
@@ -80,6 +85,8 @@ function refreshAllAtOnce() {
   for (const id of ["scenario", "representations", "formula", "table", "graph"]) setVisible(id, true);
   setVisible("flow", false);
   clearMiniGraphs(); // the flow's small graphs, if we just left a guided concept
+  const flowSection = document.getElementById("flow");
+  if (flowSection) flowSection.textContent = ""; // no leftover worksheet buttons
   renderScenario(state);
   renderFormula(state, labels);
   renderTable(state, labels);
@@ -105,7 +112,10 @@ function refreshFlow() {
   if (has("story")) renderScenario(state, { showQuestion: false }); // asked later, in Solve
   if (has("formula")) renderFormula(state, labels);
   if (has("graph")) renderGraph(state, labels);
-  renderFlow(state, { onAnswer, onAnswers, onHint, onReveal, onSkip, onNext, onBack });
+  renderFlow(state, {
+    onAnswer, onAnswers, onHint, onReveal, onSkip, onNext, onBack,
+    ...(DEV && { onAutoAnswer }), // the view shows Auto-answer buttons only when this exists
+  });
 }
 
 // Build a fresh worksheet for the current params (or clear it for concepts without a flow)
@@ -138,6 +148,24 @@ function onAnswer(itemId, answer) {
 // Several answers at once (a table with one Check button)
 function onAnswers(pairs) {
   record(submitGroup(state.flowRun, state.step, pairs).entries);
+  refreshAll();
+}
+
+// Dev mode only: submit the correct answer for an item (all open cells, for a table).
+// Logged with dev: true so test runs can be filtered out of research data.
+function onAutoAnswer(itemIds) {
+  if (!DEV) return;
+  const run = state.flowRun;
+  const items = itemIds
+    .map((id) => run.steps[state.step].items.find((it) => it.id === id))
+    .filter((it) => it && !run.progress[it.id]?.done);
+  if (items.length === 0) return;
+  const pairs = items.map((it) => [it.id, autoAnswerFor(it)]);
+  // Table cells go through submitGroup, like the table's own Check button
+  const entries = items[0].group
+    ? submitGroup(run, state.step, pairs).entries
+    : pairs.map(([id, answer]) => submitAnswer(run, state.step, id, answer).entry);
+  record(entries.filter(Boolean).map((entry) => ({ ...entry, dev: true })));
   refreshAll();
 }
 

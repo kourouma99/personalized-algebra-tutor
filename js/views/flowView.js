@@ -87,6 +87,22 @@ function helpNode(item, progress, run, handlers) {
   return wrap;
 }
 
+// Dev mode only (handlers.onAutoAnswer exists only with ?dev=1): fills in the right answer
+function devButton(itemIds, run, handlers) {
+  if (!handlers.onAutoAnswer) return null;
+  if (itemIds.every((id) => getProgress(run, id).done)) return null;
+  const b = button("Auto-answer", "btn-dev", () => handlers.onAutoAnswer(itemIds));
+  b.title = "Dev mode: submit the correct answer";
+  return b;
+}
+
+// Appends the dev button (if any) to a form or item wrapper
+function withDev(node, itemIds, run, handlers) {
+  const dev = devButton(itemIds, run, handlers);
+  if (dev) node.appendChild(dev);
+  return node;
+}
+
 function numberInput(label, value) {
   const input = el("input", "flow-input");
   input.type = "text";
@@ -138,7 +154,7 @@ function renderGraphChoice(item, progress, run, handlers) {
   pendingGraphs.push({ ids, paramsList, fitList: item.graphFit ?? paramsList });
 
   wrap.append(grid, feedbackNode(progress.feedback), helpNode(item, progress, run, handlers));
-  return wrap;
+  return withDev(wrap, [item.id], run, handlers);
 }
 
 function renderChoice(item, progress, run, handlers) {
@@ -158,7 +174,7 @@ function renderChoice(item, progress, run, handlers) {
   }
 
   wrap.append(choices, feedbackNode(progress.feedback), helpNode(item, progress, run, handlers));
-  return wrap;
+  return withDev(wrap, [item.id], run, handlers);
 }
 
 function renderNumber(item, progress, run, handlers) {
@@ -181,7 +197,7 @@ function renderNumber(item, progress, run, handlers) {
     feedbackNode(progress.feedback),
     helpNode(item, progress, run, handlers)
   );
-  return form;
+  return withDev(form, [item.id], run, handlers);
 }
 
 // "y = [ ]x + [ ]": one input after each part
@@ -211,7 +227,7 @@ function renderPair(item, progress, run, handlers) {
     feedbackNode(progress.feedback),
     helpNode(item, progress, run, handlers)
   );
-  return form;
+  return withDev(form, [item.id], run, handlers);
 }
 
 // A table where some y cells are inputs. One Check button checks every filled cell.
@@ -289,7 +305,7 @@ function renderTable(table, items, run, groupId, handlers) {
   const open = items.filter((it) => !getProgress(run, it.id).done);
   const target = open.find((it) => getProgress(run, it.id).attempts > 0) ?? open[0];
   if (target) form.appendChild(helpNode(target, getProgress(run, target.id), run, handlers));
-  return form;
+  return withDev(form, items.map((it) => it.id), run, handlers); // all open cells
 }
 
 // Read-only copy of an earlier table: what the student found ("?" where they haven't yet)

@@ -103,8 +103,10 @@ export function stepStatus(run, stepIndex) {
   return null;
 }
 
-export function canVisit(run, stepIndex) {
-  return stepIndex >= 0 && stepIndex <= run.furthest && stepIndex < run.steps.length;
+// dev = true (?dev=1): every step can be visited, for testing
+export function canVisit(run, stepIndex, dev = false) {
+  const inRange = stepIndex >= 0 && stepIndex < run.steps.length;
+  return inRange && (dev || stepIndex <= run.furthest);
 }
 
 export function markVisited(run, stepIndex) {
@@ -172,6 +174,17 @@ export function findItem(run, stepIndex, itemId) {
 function logEntry(run, stepIndex, fields) {
   const step = run.steps[stepIndex];
   return { step: step.id, ...step.logFields, ...fields, time: new Date().toISOString() };
+}
+
+/*
+  Dev mode (?dev=1): the correct answer for an item, in the form the student would type.
+  item.autoAnswer wins (e.g. ["3", "12"] for y = [ ]x + [ ], or "93/7"); otherwise the
+  correct option key for choices, or String(item.answer) for number boxes.
+*/
+export function autoAnswerFor(item) {
+  if (item.autoAnswer !== undefined) return item.autoAnswer;
+  if (item.type === "choice") return item.options.find((o) => item.check(o.key))?.key;
+  return String(item.answer);
 }
 
 // A "start" log entry for a new run (extra: e.g. concept, interest, params)
