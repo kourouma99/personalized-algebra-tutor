@@ -4,9 +4,9 @@
   "name": "personalized-algebra-tutor",
   "version": "1.0.0",
   "description": "A research prototype where students learn a math concept through a scenario personalized to their interests (sports, music, gaming, animals, and so on).",
-  "main": "index.js",
+  "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server/server.js"
   },
   "repository": {
     "type": "git",

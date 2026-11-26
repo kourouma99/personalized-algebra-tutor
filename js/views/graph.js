@@ -24,7 +24,7 @@
 import { config } from "../config.js";
 
 // ---------------------------------------------------------------------------
-// SETUP (already written): checking that the graphing library is available
+// SETUP: checking that the graphing library is available
 // ---------------------------------------------------------------------------
 
 // Checks that the library chosen in config.js has loaded.
@@ -45,7 +45,7 @@ export async function initGraphing() {
 
 
 
-import { makePoints } from "./table.js"; // put this next to the config import
+import { makePoints } from "./table.js"; // the same points the table shows
 
 let graphBoard = null;
 let numberLineBoard = null;

@@ -6,8 +6,8 @@
   The column headers come from the sample scenario labels (e.g. "Games played"),
   so the table is personalized too.
 
-  graph.js uses the SAME x values and the SAME evaluate(), so the table and
-  graph always agree. Consider sharing a helper for making the points (see TODO 2).
+  graph.js uses the SAME points (it imports makePoints from here), so the table
+  and graph always agree.
 
   Draws into #table in index.html.
 */

@@ -62,7 +62,7 @@
 // The guided worksheet for this concept. It lives in js/flows/ so this file stays math-only.
 import linearFlow from "../../flows/linearFlow.js";
 
-// The real module. Fill in the four methods by following the TODOs.
+// Whole number from min to max, both included
 function randomInt(min, max){
   min = Math.ceil(min);
   max = Math.floor(max);

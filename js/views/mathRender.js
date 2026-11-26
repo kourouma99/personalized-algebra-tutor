@@ -13,7 +13,7 @@
   (In a JavaScript string, a backslash must be written twice: "\\frac".)
 */
 
-// TODO 1: render one piece of math
+// Render one piece of math
 export function renderMath(element, latex, displayMode = false) {
   if (typeof katex === "undefined") {
     element.textContent = latex; // CDN failed: show plain text instead
@@ -22,7 +22,7 @@ export function renderMath(element, latex, displayMode = false) {
   katex.render(latex, element, { displayMode, throwOnError: false });
 }
 
-// TODO 2: render a sentence that mixes words and math
+// Render a sentence that mixes words and math, e.g. "After \(x\) games…"
 export function renderTextWithMath(element, text) {
   element.textContent = ""; // clear old content
 

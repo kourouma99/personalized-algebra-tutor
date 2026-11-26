@@ -1,4 +1,3 @@
-// import { getConcept } from "./core/conceptRegistry.js";
 import { state, setState } from "./state.js";
 import { validateParams } from "./core/validator.js";
 import { renderSequence, nextStep, previousStep } from "./core/sequence.js";
