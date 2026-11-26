@@ -27,7 +27,9 @@ import { parseNumber, numbersMatch, fractionLatex } from "../core/answerCheck.js
 // working BACKWARDS one step, which is how they discover the starting amount b.
 const TABLE_XS = [0, 1, 2, 5, 8];
 const GIVEN_XS = [1, 2];
-const SOLVE_XS = [3, 4, 6, 7, 9, 10]; // not in the table, so the student must use the equation
+// Solve uses a BIG x, far past the table and the graph, so the student must use the equation
+const SOLVE_RANGE = [20, 60];
+const SMALL_SOLVE_XS = [3, 4, 6, 7, 9, 10]; // last resort, not in the table
 const TRANSFER_XS = [2, 12];
 const TRANSFER_FRACTION = { numerator: 3, denominator: 7 };
 const DECIMAL_TOLERANCE = 0.01; // for the transfer step, where decimals like 1.71 are fine
@@ -140,6 +142,30 @@ function numberItem({ id, prompt, answer, hints, answerText, tolerance, ...rest 
   };
 }
 
+/*
+  The x for the Solve question. Story amounts can't go negative (validate() has the
+  same rule), so a falling line limits how far out we can go:
+    1. a random whole x in SOLVE_RANGE (20–60) where y is still >= 0
+    2. else a random x past the graph (xMax + 1 up to the last x with y >= 0)
+    3. else (y reaches 0 by xMax) one of the small x values not in the table
+  Returns { x, kind: "big" | "past-graph" | "small" } so tests can count each case.
+*/
+export function chooseSolveX(params, y, rng = Math.random) {
+  const pick = (list) => list[Math.floor(rng() * list.length)];
+  const range = (lo, hi) => Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
+
+  const big = range(...SOLVE_RANGE).filter((x) => y(x) >= 0);
+  if (big.length) return { x: pick(big), kind: "big" };
+
+  const past = range(params.xMax + 1, SOLVE_RANGE[0] - 1).filter((x) => y(x) >= 0);
+  if (past.length) return { x: pick(past), kind: "past-graph" };
+
+  const small = SMALL_SOLVE_XS.filter((x) => x >= params.xMin && x <= params.xMax);
+  return { x: small.length ? pick(small) : params.xMax, kind: "small" };
+}
+
+const pickSolveX = (params, y, rng) => chooseSolveX(params, y, rng).x;
+
 // Sign-aware wording for a change: "goes up by 4", "goes down by 4", "stays the same".
 // Hints never say "add -4".
 export function change(n, tense = "present") {
@@ -234,8 +260,7 @@ export default {
     const named = (label, v) => (scenario ? `${label} (\\(${v}\\))` : `\\(${v}\\)`);
 
     // The x for the Solve question is chosen by code, inside the concept's range
-    const solveChoices = SOLVE_XS.filter((x) => x >= params.xMin && x <= params.xMax);
-    const qx = solveChoices.length ? solveChoices[Math.floor(rng() * solveChoices.length)] : params.xMax;
+    const qx = pickSolveX(params, y, rng);
 
     // Hint 2 for "find y at x": start at b, then go up/down |m| for each of the x steps.
     // e.g. "Start at 50. For each of the 7 steps, y goes down by 4: 50 − 4 · 7."
