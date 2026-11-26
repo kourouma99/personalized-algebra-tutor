@@ -8,7 +8,7 @@ A research prototype where students learn a math concept through a scenario pers
 
 The page is plain HTML, CSS, and vanilla JavaScript (ES modules), with no build step. A small Node/Express server (`server/server.js`) serves the page and will hold the AI route later (so the API key never reaches the browser). Its only npm dependency is Express.
 
-- **Guided worksheet (linear):** instead of showing everything at once, the linear concept walks the student through the six steps one at a time. Each step asks them to *do* something (predict, fill in a table, write or pick the equation, solve, explain, use function notation), with hints on request, Skip for now, and a research log of every answer in `state.responses`. Exponential and quadratic still show the all-at-once page.
+- **Guided worksheet (linear and exponential):** instead of showing everything at once, each guided concept walks the student through the six steps one at a time. Each step asks them to *do* something (predict, fill in a table, write or pick the equation, solve, explain, use function notation), with hints on request, Skip for now, and a research log of every answer in `state.responses`. Quadratic still shows the all-at-once page. Add `?dev=1` to the URL for dev mode: every step is clickable and each item has an Auto-answer button.
 - **Graphs and number lines:** [JSXGraph](https://jsxgraph.org/) from a CDN (no API key needed). Only `js/views/graph.js` may talk to the graphing library, so it can be swapped (e.g. for Desmos) by changing that one file and the `provider` setting in `js/config.js`. Graphs are drawn from the same computed points as the table, never from an equation.
 - **Math notation:** [KaTeX](https://katex.org/) from a CDN. Only `js/views/mathRender.js` calls KaTeX. Other views use its helpers.
 
@@ -53,10 +53,12 @@ personalized-algebra-tutor/
     ├── concepts/
     │   └── algebra/             # math only: generateParams, validate, evaluate, formulas
     │       ├── linearEquation.js  # y = mx + b (has a guided flow)
-    │       ├── exponential.js     # y = a · b^x
+    │       ├── exponential.js     # y = a · b^x (has a guided flow)
     │       └── quadratic.js
     ├── flows/
-    │   └── linearFlow.js        # the pedagogy for linear: questions, hints, wrong options
+    │   ├── flowHelpers.js       # shared building blocks: shuffle, item builders, nearest table row
+    │   ├── linearFlow.js        # the pedagogy for linear: questions, hints, wrong options
+    │   └── exponentialFlow.js   # the same for exponential (hints multiply/divide, never add)
     ├── views/                   # generic renderers, no algebra-specific logic
     │   ├── conceptPicker.js
     │   ├── interestPicker.js
