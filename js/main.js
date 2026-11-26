@@ -36,6 +36,16 @@ const MAX_ATTEMPTS = 100;
 // and every item gets an "Auto-answer" button. Never shown without ?dev=1.
 const DEV = new URLSearchParams(window.location.search).get("dev") === "1";
 
+// Dev mode only: ?format=write|choose|both forces the Represent format (flows that
+// support it; exponential is always "both"). Ignored without ?dev=1 or if misspelled.
+const FORMATS = ["write", "choose", "both", "random"];
+const FORMAT_OVERRIDE = (() => {
+  if (!DEV) return null;
+  const format = new URLSearchParams(window.location.search).get("format");
+  if (format && !FORMATS.includes(format)) console.warn(`?format=${format} ignored; use one of ${FORMATS.join(", ")}`);
+  return FORMATS.includes(format) ? format : null;
+})();
+
 // Keep generating until the params pass every check (with a safety limit)
 function generateValidParams(concept) {
   let lastReasons = [];
@@ -129,7 +139,8 @@ function startFlow() {
   }
   const values = concept.storyValues ? concept.storyValues(params) : params;
   const scenario = getScenario(concept.id, interest, values.variant);
-  setState({ flowRun: createRun(concept.flow, concept, params, { scenario, values }), step: 0 });
+  const settings = FORMAT_OVERRIDE ? { representFormat: FORMAT_OVERRIDE } : undefined;
+  setState({ flowRun: createRun(concept.flow, concept, params, { scenario, values, settings }), step: 0 });
   record([startEntry(state.flowRun, { concept: concept.id, interest, params })]);
 }
 
