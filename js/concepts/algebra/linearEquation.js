@@ -81,23 +81,23 @@ export default {
     interceptRange: [0, 50],
   },
 
-  
-    generateParams() {
+  generateParams() {
     const [mMin, mMax] = this.constraints.slopeRange;
     const [bMin, bMax] = this.constraints.interceptRange;
     const xMin = 0;
     const xMax = 10;
 
+    // Choose the direction FIRST, 50/50, like exponential does. Picking m freely made
+    // only ~17% of lines go down, because falling lines fail validate() more often
+    // (y can't go below 0) and every retry re-rolled the direction.
+    const goesUp = Math.random() < 0.5;
+
     let params;
     do {
-      let m;
-      do {
-        m = randomInt(mMin, mMax);
-      } while (m === 0); // no flat lines
-
+      const m = goesUp ? randomInt(1, mMax) : randomInt(mMin, -1); // never 0: no flat lines
       const b = randomInt(bMin, bMax);
       params = { m, b, xMin, xMax };
-    } while (!this.validate(params).valid); // retry until it passes every rule
+    } while (!this.validate(params).valid); // retry m and b (same direction) until it passes
 
     return params;
   },
