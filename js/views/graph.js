@@ -9,7 +9,7 @@
 
   Swapping libraries later (e.g. back to Desmos):
     The rest of the app only calls the exported functions below:
-      initGraphing(), renderGraph(state, labels), renderNumberLine(state, labels),
+      initGraphing(), renderGraph(state, labels, { highlight }), renderNumberLine(state, labels),
       renderMiniGraphs(elementIds, concept, paramsList), clearMiniGraphs()
     Keep those names and arguments the same, change what's inside them,
     and update `provider` in js/config.js. No other file needs to change.
@@ -46,6 +46,7 @@ export async function initGraphing() {
 
 
 import { makePoints } from "./table.js"; // the same points the table shows
+import { boundingBox, readingView } from "../core/graphScale.js"; // axes numbers, shared with flows
 
 let graphBoard = null;
 let numberLineBoard = null;
@@ -58,15 +59,6 @@ function boardOptionsFor(interactive) {
     pan: { enabled: interactive, needShift: false },     // drag without holding Shift
     zoom: { enabled: interactive, wheel: true, needShift: false },
   };
-}
-
-// Visible area around the data, with 10% padding: [left, top, right, bottom]
-function boundingBox(xs, ys) {
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  const yMin = Math.min(0, ...ys), yMax = Math.max(...ys); // always show y = 0
-  const padX = (xMax - xMin) * 0.1 || 1;
-  const padY = (yMax - yMin) * 0.1 || 1;
-  return [xMin - padX, yMax + padY, xMax + padX, yMin - padY];
 }
 
 // Hover style for table points: JSXGraph's default hover colour is a pale blue that
@@ -178,7 +170,19 @@ export function renderMiniGraphs(elementIds, concept, paramsList, fitList = para
   return box;
 }
 
-export function renderGraph(state, labels) {
+const HIGHLIGHT_COLOR = "#e8590c"; // orange: the student's answer on the graph
+
+// Axis ticks that run across the whole graph (grid lines) at a fixed step
+function gridTicks(step) {
+  return { ticks: { ticksDistance: step, insertTicks: false, minorTicks: 0, majorHeight: -1, strokeOpacity: 0.25 } };
+}
+
+/*
+  options.highlight = { x, y }: mark that point (e.g. the Solve answer) and switch to the
+  graph-reading view from core/graphScale.js: the x range is stretched to include the
+  point, and grid lines are drawn at the same steps the flow uses to check a reading.
+*/
+export function renderGraph(state, labels, options = {}) {
   const surface = document.getElementById("graph-surface");
   if (!surface || !state.concept || !state.params) return;
 
@@ -187,23 +191,46 @@ export function renderGraph(state, labels) {
     return;
   }
 
+  const { highlight = null } = options;
   const points = makePoints(state.concept, state.params);
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
-  const [left, top, right, bottom] = boundingBox(xs, ys);
+  const view = highlight ? readingView(state.concept, state.params, highlight) : null;
+  const [left, top, right, bottom] = view ? view.box : boundingBox(points.map((p) => p.x), points.map((p) => p.y));
 
   if (graphBoard) JXG.JSXGraph.freeBoard(graphBoard); // clear the old graph
   graphBoard = JXG.JSXGraph.initBoard("graph-surface", {
     ...boardOptionsFor(state.graphInteractive),
     boundingbox: [left, top, right, bottom],
+    ...(view && { defaultAxes: { x: gridTicks(view.xStep), y: gridTicks(view.yStep) } }),
   });
 
   // Smooth line: sample many x values between the table points. Still computed by
-  // OUR evaluate(), not by JSXGraph from an equation.
-  const curve = sampleCurve(state.concept, state.params);
+  // OUR evaluate(), not by JSXGraph from an equation. Drawn further out when a
+  // highlighted point lies past the table (e.g. x = 40).
+  const curveParams = view ? { ...state.params, xMax: view.xMax } : state.params;
+  const curve = sampleCurve(state.concept, curveParams, view ? 400 : 100);
   graphBoard.create("curve", [curve.xs, curve.ys], { strokeWidth: 2 });
 
   for (const p of points) addHoverPoint(graphBoard, p, [left, top, right, bottom]);
+
+  if (highlight) {
+    const onRight = highlight.x > (left + right) / 2;
+    graphBoard.create("point", [highlight.x, highlight.y], {
+      fixed: true,
+      size: 6,
+      fillColor: HIGHLIGHT_COLOR,
+      strokeColor: HIGHLIGHT_COLOR,
+      highlight: false,
+      name: `(${formatCoordinate(highlight.x)}, ${formatCoordinate(highlight.y)})`,
+      withLabel: true,
+      label: {
+        fontSize: 14,
+        strokeColor: HIGHLIGHT_COLOR,
+        anchorX: onRight ? "right" : "left",
+        offset: [onRight ? -10 : 10, 12],
+        cssStyle: "font-weight: 700; background: rgba(255, 255, 255, 0.85); padding: 1px 4px; border-radius: 4px;",
+      },
+    });
+  }
 
   if (labels) {
     graphBoard.create("text", [right, bottom, labels.x], { anchorX: "right", anchorY: "bottom", fixed: true });

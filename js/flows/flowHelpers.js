@@ -5,6 +5,7 @@
 */
 
 import { parseNumber, numbersMatch } from "../core/answerCheck.js";
+import { readingView } from "../core/graphScale.js";
 
 // Fisher–Yates shuffle that uses the given random function, returns a new array
 export function shuffle(list, rng = Math.random) {
@@ -88,6 +89,37 @@ export function nearestKnown(x, givenRows, cells, y, solved) {
   const from = nearestRow(known, x);
   const dx = x - from.x;
   return { from, dx, steps: Math.abs(dx), dir: dx > 0 ? "up" : "down" };
+}
+
+const short = (v) => String(Number(v.toFixed(2))); // 16.428571 -> "16.43", 20 -> "20"
+
+/*
+  "Read the graph" question, asked in Solve right after the equation answer. The graph
+  is shown with that answer's point highlighted (step.graphHighlight) in the reading
+  view from core/graphScale.js; the student reads y at readX, a different small x
+  inside the graph. Any answer within half a y-grid step is accepted.
+*/
+export function graphReadItem({ concept, params, readX, highlight }) {
+  const { yStep } = readingView(concept, params, highlight);
+  const answer = concept.evaluate(params, readX);
+  const half = yStep / 2;
+  const lo = Math.floor(answer / yStep + 1e-9) * yStep;
+  const onLine = Math.abs(answer - lo) < 1e-9;
+  return numberItem({
+    id: "solve-read",
+    prompt: `The orange point on the graph is your answer. Now read the graph: about how much is \\(y\\) when \\(x = ${short(readX)}\\)?`,
+    answer,
+    tolerance: half + 1e-9,
+    answerText: `about \\(${short(answer)}\\) (anything from ${short(answer - half)} to ${short(answer + half)} is fine)`,
+    autoAnswer: short(answer), // dev mode only
+    readX,
+    yStep,
+    hints: [
+      `Find \\(x = ${short(readX)}\\) on the bottom axis, go straight up to the line, then across to the \\(y\\)-axis.`,
+      `The grid lines on the \\(y\\)-axis are ${short(yStep)} apart. At \\(x = ${short(readX)}\\) the line is ` +
+        (onLine ? `right on the grid line \\(y = ${short(lo)}\\).` : `between \\(y = ${short(lo)}\\) and \\(y = ${short(lo + yStep)}\\).`),
+    ],
+  });
 }
 
 // Whole numbers from lo to hi, both included

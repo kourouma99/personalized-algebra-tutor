@@ -22,7 +22,7 @@
 */
 
 import { parseNumber, numbersMatch, fractionLatex } from "../core/answerCheck.js";
-import { shuffle, lower, fill, choiceItem, numberItem, nearestRow } from "./flowHelpers.js";
+import { shuffle, lower, fill, choiceItem, numberItem, nearestRow, graphReadItem } from "./flowHelpers.js";
 
 export { shuffle, nearestRow }; // re-exported: older tests import them from here
 
@@ -33,6 +33,7 @@ const GIVEN_XS = [1, 2];
 // Solve uses a BIG x, far past the table and the graph, so the student must use the equation
 const SOLVE_RANGE = [20, 60];
 const SMALL_SOLVE_XS = [3, 4, 6, 7, 9, 10]; // last resort, not in the table
+const READ_XS = [3, 4, 6, 7, 9]; // graph-reading question: inside the graph, not in the table
 const TRANSFER_XS = [2, 12];
 const TRANSFER_FRACTION = { numerator: 3, denominator: 7 };
 const DECIMAL_TOLERANCE = 0.01; // for the transfer step, where decimals like 1.71 are fine
@@ -445,18 +446,28 @@ export default {
         ],
       });
     }
+    // Then a graph-reading question: the graph appears with the answer's point
+    // highlighted, and the student reads y at a different small x inside the graph
+    const highlight = m < 0
+      ? { x: solveItem.answer, y: solveItem.target }
+      : { x: qx, y: y(qx) };
+    const readChoices = READ_XS.filter((x) => x !== highlight.x && x >= params.xMin && x <= params.xMax);
+    const readX = readChoices[Math.floor(rng() * readChoices.length)];
     const solve = {
       id: "solve",
       instructions: m < 0
-        ? "Use your equation to work out when the story reaches a value."
-        : "Use your equation to answer the story's question.",
+        ? "Use your equation to work out when the story reaches a value. Then read the graph."
+        : "Use your equation to answer the story's question. Then read the graph.",
       show: ["story", "formula", "graph"],
       // Formula and graph give away Represent, so they wait until Represent is complete
       // (answered or revealed). Until then: the story and the student's own table.
       requires: { formula: "represent", graph: "represent" },
+      // ...but once the Solve answer is in, the graph appears for the reading question
+      revealAfter: { "solve-question": ["graph"] },
+      graphHighlight: { afterItem: "solve-question", ...highlight },
       referenceTable: "notice-table",
       solveQuestion,
-      items: [solveItem],
+      items: [solveItem, graphReadItem({ concept, params, readX, highlight })],
     };
 
     // ---- 5. Explain ----

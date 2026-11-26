@@ -22,11 +22,12 @@
 */
 
 import { parseNumber, numbersMatch, fractionLatex } from "../core/answerCheck.js";
-import { shuffle, lower, fill, choiceItem, numberItem, nearestKnown, range } from "./flowHelpers.js";
+import { shuffle, lower, fill, choiceItem, numberItem, nearestKnown, range, graphReadItem } from "./flowHelpers.js";
 
 const TABLE_XS = [0, 1, 2, 3, 5];
 const GIVEN_XS = [1, 2]; // the student finds x = 0 by working backwards: dividing
 const TRANSFER_XS = [2, 4, 0];
+const READ_XS = [0.5, 1.5, 2.5, 3.5, 4.5]; // graph-reading question, between the table's whole x values
 
 // A straight line, only for drawing the "linear look-alike" wrong graph
 const LINE = { evaluate: (p, x) => p.m * x + p.b };
@@ -259,11 +260,18 @@ export default {
     const question = scenario?.question
       ? fill(scenario.question, { ...(context.values ?? params), qx })
       : `What is \\(y\\) when \\(x = ${qx}\\)?`;
+    // Then read the graph at a half-way x (0.5, 1.5, …): every whole x from 0 to 5 is
+    // already in the table or is the Solve x, and a half-way value can't be copied
+    const highlight = { x: qx, y: y(qx) };
+    const readChoices = READ_XS.filter((x) => x >= params.xMin && x <= params.xMax);
+    const readX = readChoices[Math.floor(rng() * readChoices.length)];
     const solve = {
       id: "solve",
-      instructions: "Use your equation to answer the story's question.",
+      instructions: "Use your equation to answer the story's question. Then read the graph.",
       show: ["story", "formula", "graph"],
       requires: { formula: "represent", graph: "represent" },
+      revealAfter: { "solve-question": ["graph"] },
+      graphHighlight: { afterItem: "solve-question", ...highlight },
       referenceTable: "notice-table",
       items: [
         numberItem({
@@ -276,6 +284,7 @@ export default {
             `Start at ${a} and multiply by ${bText}, ${qx} times: ${power(qx)}.`,
           ],
         }),
+        graphReadItem({ concept, params, readX, highlight }),
       ],
     };
 

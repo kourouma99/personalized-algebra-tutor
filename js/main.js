@@ -15,6 +15,7 @@ import {
   startEntry,
   autoAnswerFor,
   visibleRepresentations,
+  graphHighlightFor,
 } from "./core/flowEngine.js";
 import { interests } from "./data/interests.js";
 import { getScenario } from "./data/sampleScenarios.js";
@@ -111,7 +112,8 @@ function refreshFlow() {
 
   if (has("story")) renderScenario(state, { showQuestion: false }); // asked later, in Solve
   if (has("formula")) renderFormula(state, labels);
-  if (has("graph")) renderGraph(state, labels);
+  // e.g. after the Solve answer: mark that point and switch to the graph-reading view
+  if (has("graph")) renderGraph(state, labels, { highlight: graphHighlightFor(state.flowRun, state.step) });
   renderFlow(state, {
     onAnswer, onAnswers, onHint, onReveal, onSkip, onNext, onBack,
     ...(DEV && { onAutoAnswer }), // the view shows Auto-answer buttons only when this exists
@@ -247,7 +249,7 @@ async function init() {
   graphBtn?.addEventListener("click", () => {
     setState({ graphInteractive: !state.graphInteractive });
     graphBtn.textContent = state.graphInteractive ? "Lock the graph" : "Explore the graph";
-    renderGraph(state, currentLabels());
+    refreshAll(); // redraws the graph with everything it needs (labels, highlighted point)
   });
   
   onInterestChosen(interests[0].id); // start with the first interest so the page isn't empty
