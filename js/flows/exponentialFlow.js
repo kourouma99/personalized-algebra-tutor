@@ -284,7 +284,7 @@ export default {
             `Start at ${a} and multiply by ${bText}, ${qx} times: ${power(qx)}.`,
           ],
         }),
-        graphReadItem({ concept, params, readX, highlight }),
+        graphReadItem({ concept, params, readX }),
       ],
     };
 

@@ -23,10 +23,11 @@ import {
   HINTS_BEFORE_ANSWER,
 } from "../core/flowEngine.js";
 import { renderMath, renderTextWithMath } from "./mathRender.js";
-import { renderMiniGraphs, clearMiniGraphs } from "./graph.js";
+import { renderMiniGraphs, renderReadingGraph, clearMiniGraphs } from "./graph.js";
 
 // Small graphs to draw once the step is on the page (JSXGraph needs the elements to exist)
 let pendingGraphs = [];
+let pendingReadingGraphs = []; // zoomed-in graphs of graph-reading questions
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -191,12 +192,17 @@ function renderNumber(item, progress, run, handlers) {
     event.preventDefault(); // stops the page from reloading
     handlers.onAnswer(item.id, input.value);
   });
-  form.append(
-    mathText("p", "flow-prompt", item.prompt),
-    row,
-    feedbackNode(progress.feedback),
-    helpNode(item, progress, run, handlers)
-  );
+  form.appendChild(mathText("p", "flow-prompt", item.prompt));
+  // Graph-reading question: its own zoomed-in graph between the question and the box
+  if (item.readingGraph) {
+    const surface = el("div", "flow-reading-graph");
+    surface.id = `reading-${item.id}`;
+    surface.setAttribute("role", "img");
+    surface.setAttribute("aria-label", "Zoomed-in graph of the line with a fine grid");
+    form.appendChild(surface);
+    pendingReadingGraphs.push({ id: surface.id, params: item.readingGraph.params });
+  }
+  form.append(row, feedbackNode(progress.feedback), helpNode(item, progress, run, handlers));
   return withDev(form, [item.id], run, handlers);
 }
 
@@ -352,6 +358,7 @@ export function renderFlow(state, handlers) {
   if (!container) return;
   clearMiniGraphs(); // free the old small graphs before their elements are removed
   pendingGraphs = [];
+  pendingReadingGraphs = [];
   container.textContent = "";
 
   const run = state.flowRun;
@@ -427,7 +434,9 @@ export function renderFlow(state, handlers) {
 
   // Now that the step is on the page, draw its small graphs (same axes for all of one item)
   for (const { ids, paramsList, fitList } of pendingGraphs) renderMiniGraphs(ids, state.concept, paramsList, fitList);
+  for (const { id, params } of pendingReadingGraphs) renderReadingGraph(id, state.concept, params);
   pendingGraphs = [];
+  pendingReadingGraphs = [];
 
   // Put the cursor in the first empty box, unless the student is typing somewhere else
   const active = document.activeElement;

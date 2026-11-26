@@ -10,7 +10,8 @@
   Swapping libraries later (e.g. back to Desmos):
     The rest of the app only calls the exported functions below:
       initGraphing(), renderGraph(state, labels, { highlight }), renderNumberLine(state, labels),
-      renderMiniGraphs(elementIds, concept, paramsList), clearMiniGraphs()
+      renderMiniGraphs(elementIds, concept, paramsList), renderReadingGraph(elementId, concept, params),
+      clearMiniGraphs()
     Keep those names and arguments the same, change what's inside them,
     and update `provider` in js/config.js. No other file needs to change.
 
@@ -46,7 +47,7 @@ export async function initGraphing() {
 
 
 import { makePoints } from "./table.js"; // the same points the table shows
-import { boundingBox, readingView } from "../core/graphScale.js"; // axes numbers, shared with flows
+import { boundingBox, readingView, zoomedView } from "../core/graphScale.js"; // axes numbers, shared with flows
 
 let graphBoard = null;
 let numberLineBoard = null;
@@ -170,7 +171,7 @@ export function renderMiniGraphs(elementIds, concept, paramsList, fitList = para
   return box;
 }
 
-const HIGHLIGHT_COLOR = "#e8590c"; // orange: the student's answer on the graph
+const HIGHLIGHT_COLOR = "#7048e8"; // purple: the student's answer, unlike the orange table dots
 
 // Axis ticks that run across the whole graph (grid lines) at a fixed step
 function gridTicks(step) {
@@ -178,9 +179,36 @@ function gridTicks(step) {
 }
 
 /*
-  options.highlight = { x, y }: mark that point (e.g. the Solve answer) and switch to the
-  graph-reading view from core/graphScale.js: the x range is stretched to include the
-  point, and grid lines are drawn at the same steps the flow uses to check a reading.
+  The zoomed-in graph for the graph-reading question (drawn inside the question by
+  views/flowView.js): just the line over the concept's normal x range, on the fine
+  grid of core/graphScale.js zoomedView — the same yStep the flow uses for tolerance.
+  No points or labels that would give the answer away. Freed by clearMiniGraphs().
+  Returns the view ({ box, xStep, yStep }) for tests.
+*/
+export function renderReadingGraph(elementId, concept, params) {
+  const view = zoomedView(concept, params);
+  const element = document.getElementById(elementId);
+  if (!element) return view;
+  if (!window.JXG) {
+    element.textContent = "Graph unavailable.";
+    return view;
+  }
+  const board = JXG.JSXGraph.initBoard(elementId, {
+    ...boardOptionsFor(false),
+    boundingbox: view.box,
+    defaultAxes: { x: gridTicks(view.xStep), y: gridTicks(view.yStep) },
+  });
+  const curve = sampleCurve(concept, params, 200);
+  board.create("curve", [curve.xs, curve.ys], { strokeWidth: 2, highlight: false });
+  miniBoards.push(board);
+  return view;
+}
+
+/*
+  options.highlight = { x, y }: mark that point (e.g. the Solve answer) in purple with its
+  coordinates, and switch to the wide view from core/graphScale.js readingView: the x
+  range is stretched to include the point, with grid lines. (The reading question itself
+  uses its own zoomed-in graph, renderReadingGraph.)
 */
 export function renderGraph(state, labels, options = {}) {
   const surface = document.getElementById("graph-surface");

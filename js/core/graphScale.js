@@ -25,7 +25,26 @@ export function niceStep(span, lines = 8) {
 }
 
 /*
-  The view for a graph-reading question: the usual x range, stretched to include a
+  The zoomed-in graph for the reading question: only the concept's normal x range
+  (e.g. 0 to 10), with a FINE grid (about 20 lines across, 15 up). The reading answer
+  is accepted within half of this yStep.
+  Returns { box, xStep, yStep }.
+*/
+export function zoomedView(concept, params) {
+  const xs = [];
+  const steps = Math.max(1, (params.xMax - params.xMin) * 4); // a few points per unit catches curves
+  for (let i = 0; i <= steps; i++) xs.push(params.xMin + ((params.xMax - params.xMin) * i) / steps);
+  const ys = xs.map((x) => concept.evaluate(params, x));
+  const box = boundingBox(xs, ys);
+  return {
+    box,
+    xStep: niceStep(box[2] - box[0], 20),
+    yStep: niceStep(box[1] - box[3], 15),
+  };
+}
+
+/*
+  The wide view that shows the Solve answer: the usual x range, stretched to include a
   highlighted point (e.g. the Solve answer at x = 40), with grid steps for both axes.
   Returns { box, xStep, yStep, xMax } where xMax is how far the line should be drawn.
 */

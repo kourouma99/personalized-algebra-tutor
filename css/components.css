@@ -362,3 +362,13 @@
   color: #b35c00;
   cursor: pointer;
 }
+
+/* Zoomed-in graph inside the graph-reading question (drawn by graph.js renderReadingGraph) */
+.flow-reading-graph {
+  width: 100%;
+  max-width: 560px;
+  height: 300px;
+  margin: 4px 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}

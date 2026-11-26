@@ -467,7 +467,7 @@ export default {
       graphHighlight: { afterItem: "solve-question", ...highlight },
       referenceTable: "notice-table",
       solveQuestion,
-      items: [solveItem, graphReadItem({ concept, params, readX, highlight })],
+      items: [solveItem, graphReadItem({ concept, params, readX })],
     };
 
     // ---- 5. Explain ----
