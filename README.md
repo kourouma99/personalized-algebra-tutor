@@ -22,6 +22,8 @@ ES modules don't load when you open `index.html` directly (`file://`), so you ne
 2. `npm start`
 3. Open `http://localhost:3000`. Restart `npm start` after changing `server/server.js`; page files (HTML, CSS, JS) only need a browser refresh.
 
+**Tests:** `npm test` (about 10 seconds) and the optional `npm run test:real` (real JSXGraph and KaTeX). See [tests/README.md](tests/README.md).
+
 **Or with Live Server** (page only, no server route):
 
 1. Install the **Live Server** extension in VS Code (by Ritwick Dey).
