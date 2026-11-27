@@ -5,6 +5,9 @@
   (h, k) is the vertex. x runs from 0 to 2h, so the table is symmetric.
 */
 
+// The guided worksheet for this concept. It lives in js/flows/ so this file stays math-only.
+import quadraticFlow from "../../flows/quadraticFlow.js";
+
 const A_VALUES = [-2, -1, 1, 2];
 
 function randomInt(min, max) {
@@ -15,6 +18,7 @@ export default {
   id: "quadratic",
   name: "Quadratic",
   subject: "algebra",
+  flow: quadraticFlow, // main.js uses the guided step-by-step page when a concept has a flow
   representations: ["formula", "table", "graph", "verbal"],
   constraints: {
     aValues: A_VALUES,

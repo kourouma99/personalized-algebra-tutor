@@ -77,6 +77,8 @@ function refreshAll() {
   renderConceptPicker(listConcepts(), state.concept?.id, onConceptChosen);
   renderInterestPicker(interests, state.interest, onInterestChosen, onCustomInterest);
   const run = state.flowRun;
+  // The step bar is only for concepts with a guided flow; an all-at-once page has no steps
+  setVisible("step-sequence", Boolean(run));
   renderSequence(
     state,
     run && {
@@ -120,7 +122,7 @@ function refreshFlow() {
   setVisible("number-line", false);
   setVisible("flow", true);
 
-  if (has("story")) renderScenario(state, { showQuestion: false }); // asked later, in Solve
+  if (has("story")) renderScenario(state, { showQuestion: false, guided: true }); // question asked later, in Solve
   if (has("formula")) renderFormula(state, labels);
   // e.g. after the Solve answer: mark that point and switch to the graph-reading view
   if (has("graph")) renderGraph(state, labels, { highlight: graphHighlightFor(state.flowRun, state.step) });

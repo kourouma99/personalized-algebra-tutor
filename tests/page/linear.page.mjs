@@ -335,7 +335,7 @@ origLog(`responses: ${state.responses.length} (${types})`);
 
 // ---- Other concepts unchanged ----
 $$("#concept-picker button").find((b) => b.textContent === "Quadratic").click();
-assert.ok(hidden("flow") && !hidden("table") && !$("#step-sequence button"), "quadratic: all at once, plain step bar");
+assert.ok(state.flowRun && !hidden("flow") && hidden("table") && !hidden("step-sequence"), "quadratic: guided flow with step bar");
 assert.equal(live().length, 0, "small graphs freed when leaving the flow");
 $$("#concept-picker button").find((b) => b.textContent === "Linear").click();
 assert.ok(!hidden("flow") && state.step === 0);

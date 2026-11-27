@@ -8,7 +8,7 @@ A research prototype where students learn a math concept through a scenario pers
 
 The page is plain HTML, CSS, and vanilla JavaScript (ES modules), with no build step. A small Node/Express server (`server/server.js`) serves the page and will hold the AI route later (so the API key never reaches the browser). Its only npm dependency is Express.
 
-- **Guided worksheet (linear and exponential):** instead of showing everything at once, each guided concept walks the student through the six steps one at a time. Each step asks them to *do* something (predict, fill in a table, write or pick the equation, solve, explain, use function notation), with hints on request, Skip for now, and a research log of every answer in `state.responses`. Quadratic still shows the all-at-once page. Add `?dev=1` to the URL for dev mode: every step is clickable and each item has an Auto-answer button.
+- **Guided worksheet (linear, exponential and quadratic):** instead of showing everything at once, each guided concept walks the student through the six steps one at a time. Each step asks them to *do* something (predict, fill in a table, write or pick the equation, solve, explain, use function notation), with hints on request, Skip for now, and a research log of every answer in `state.responses`. A concept without a flow would still get the all-at-once page (and no step bar). Add `?dev=1` to the URL for dev mode: every step is clickable and each item has an Auto-answer button; `&format=write|choose|both` forces linear's Represent format.
 - **Graphs and number lines:** [JSXGraph](https://jsxgraph.org/) from a CDN (no API key needed). Only `js/views/graph.js` may talk to the graphing library, so it can be swapped (e.g. for Desmos) by changing that one file and the `provider` setting in `js/config.js`. Graphs are drawn from the same computed points as the table, never from an equation.
 - **Math notation:** [KaTeX](https://katex.org/) from a CDN. Only `js/views/mathRender.js` calls KaTeX. Other views use its helpers.
 
@@ -22,7 +22,7 @@ ES modules don't load when you open `index.html` directly (`file://`), so you ne
 2. `npm start`
 3. Open `http://localhost:3000`. Restart `npm start` after changing `server/server.js`; page files (HTML, CSS, JS) only need a browser refresh.
 
-**Tests:** `npm test` (about 10 seconds) and the optional `npm run test:real` (real JSXGraph and KaTeX). See [tests/README.md](tests/README.md).
+**Tests:** `npm test` (about 20 seconds) and the optional `npm run test:real` (real JSXGraph and KaTeX). See [tests/README.md](tests/README.md).
 
 **Or with Live Server** (page only, no server route):
 
@@ -56,11 +56,12 @@ personalized-algebra-tutor/
     │   └── algebra/             # math only: generateParams, validate, evaluate, formulas
     │       ├── linearEquation.js  # y = mx + b (has a guided flow)
     │       ├── exponential.js     # y = a · b^x (has a guided flow)
-    │       └── quadratic.js
+    │       └── quadratic.js       # y = a(x - h)^2 + k (has a guided flow)
     ├── flows/
     │   ├── flowHelpers.js       # shared building blocks: shuffle, item builders, nearest table row
     │   ├── linearFlow.js        # the pedagogy for linear: questions, hints, wrong options
-    │   └── exponentialFlow.js   # the same for exponential (hints multiply/divide, never add)
+    │   ├── exponentialFlow.js   # the same for exponential (hints multiply/divide, never add)
+    │   └── quadraticFlow.js     # the same for quadratic (turning point and symmetry)
     ├── views/                   # generic renderers, no algebra-specific logic
     │   ├── conceptPicker.js
     │   ├── interestPicker.js

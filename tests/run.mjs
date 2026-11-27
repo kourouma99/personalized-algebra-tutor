@@ -27,10 +27,11 @@ const jobs = real
   : [
       ["logic/linear.test.mjs"],
       ["logic/exponential.test.mjs"],
+      ["logic/quadratic.test.mjs"],
       ["logic/graphReading.test.mjs"],
       ...repeat(PAGE_RUNS, ["page/linear.page.mjs"]),
       ...repeat(PAGE_RUNS, ["page/exponential.page.mjs"]),
-      ["page/quadratic.page.mjs"],
+      ...repeat(PAGE_RUNS, ["page/quadratic.page.mjs"]),
       ["page/devMode.page.mjs", "on"],
       ["page/devMode.page.mjs", "off"],
     ];

@@ -25,7 +25,9 @@ export function fillPlaceholders(text, params) {
 }
 
 // showQuestion: false hides the story's question (the guided flow asks it later, in Solve)
-export function renderScenario(state, { showQuestion = true } = {}) {
+// guided: true uses the scenario's guidedStory if it has one (a version that doesn't give
+//         away what the worksheet asks, e.g. quadratic leaves out "back at the start after 2h")
+export function renderScenario(state, { showQuestion = true, guided = false } = {}) {
   const container = document.getElementById("scenario");
   if (!container) return;
   container.textContent = "";
@@ -50,7 +52,8 @@ export function renderScenario(state, { showQuestion = true } = {}) {
   title.textContent = scenario.title;
 
   const story = document.createElement("p");
-  renderTextWithMath(story, fillPlaceholders(scenario.story, values));
+  const storyText = guided && scenario.guidedStory ? scenario.guidedStory : scenario.story;
+  renderTextWithMath(story, fillPlaceholders(storyText, values));
 
   container.append(title, story);
 

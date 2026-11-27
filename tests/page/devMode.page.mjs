@@ -31,7 +31,7 @@ const stepLinks = () => $$("#step-sequence .step-link");
 
 if (!devOn) {
   // Without ?dev=1: no Auto-answer anywhere, only visited steps are links
-  for (const concept of ["Linear", "Exponential"]) {
+  for (const concept of ["Linear", "Exponential", "Quadratic"]) {
     const btn = $$("#concept-picker button").find((b) => b.textContent === concept);
     if (!btn) continue;
     btn.click();
@@ -47,7 +47,7 @@ if (!devOn) {
 }
 
 // With ?dev=1: every step is a link from the start, Auto-answer completes every step
-const conceptButtons = $$("#concept-picker button").filter((b) => ["Linear", "Exponential"].includes(b.textContent));
+const conceptButtons = $$("#concept-picker button").filter((b) => ["Linear", "Exponential", "Quadratic"].includes(b.textContent));
 for (const conceptBtn of conceptButtons) {
   const name = conceptBtn.textContent;
   for (let round = 0; round < 3; round++) {

@@ -82,12 +82,9 @@ for (const name of ["Quadratic", "Exponential", "Linear", "Quadratic"]) {
   assert.deepEqual(errors, [], `${name}: no errors`);
   if (name === "Quadratic") {
     assert.equal(state.concept.id, "quadratic");
-    assert.ok(hidden("flow") && !hidden("table") && !hidden("formula") && !hidden("graph"), "quadratic: all-at-once page");
+    assert.ok(state.flowRun && !hidden("flow") && !hidden("step-sequence"), "quadratic: guided flow");
     assert.ok($("#scenario h2")?.textContent, "quadratic story shown");
-    assert.ok($$("#table tbody tr").length > 0, "quadratic table rows");
-    assert.ok($("#formula .katex"), "quadratic formula rendered by KaTeX");
-    const board = Object.values(window.JXG.boards).find((b) => b.container === "graph-surface");
-    assert.ok(board && board.objectsList.some((o) => o.elType === "curve"), "quadratic graph drawn");
+    assert.ok($("#flow .katex"), "quadratic worksheet math rendered by KaTeX");
     for (const interest of $$("#interest-picker .interest-buttons button")) {
       errors.length = 0;
       interest.click();
@@ -107,12 +104,33 @@ for (const name of ["Quadratic", "Exponential", "Linear", "Quadratic"]) {
 }
 origLog("real page test passed: Quadratic, Exponential, Linear, Quadratic again — no errors");
 
+// A concept WITHOUT a flow still gets the all-at-once page, with real JSXGraph and KaTeX,
+// and no step bar. (All three concepts have flows now, so remove quadratic's for a moment.)
+{
+  const { default: quadMod } = await load("js/concepts/algebra/quadratic.js");
+  const savedFlow = quadMod.flow;
+  quadMod.flow = undefined;
+  errors.length = 0;
+  $$("#concept-picker button").find((b) => b.textContent === "Linear").click();
+  $$("#concept-picker button").find((b) => b.textContent === "Quadratic").click();
+  report("all-at-once fallback");
+  assert.deepEqual(errors, [], "all-at-once page: no errors");
+  assert.ok(!state.flowRun && hidden("flow") && hidden("step-sequence"), "no flow: worksheet and step bar hidden");
+  assert.ok(!hidden("table") && !hidden("formula") && !hidden("graph") && $$("#table tbody tr").length > 0, "all-at-once page shown");
+  assert.ok($("#formula .katex"), "formula rendered by KaTeX");
+  const board = Object.values(window.JXG.boards).find((b) => b.container === "graph-surface");
+  assert.ok(board && board.objectsList.some((o) => o.elType === "curve"), "graph drawn");
+  quadMod.flow = savedFlow;
+  $$("#concept-picker button").find((b) => b.textContent === "Linear").click();
+  origLog("all-at-once fallback (concept without a flow) OK");
+}
+
 // With ?dev=1: leave each guided flow from every step (answered or not) to Quadratic
 if (query.includes("dev=1")) {
   const click = (name) => $$("#concept-picker button").find((b) => b.textContent === name).click();
   const devAnswerStep = () => { for (let g = 0; g < 20 && $$("#flow .btn-dev").length; g++) $$("#flow .btn-dev")[0].click(); };
   let failures = 0;
-  for (const from of ["Linear", "Exponential"]) {
+  for (const from of ["Linear", "Exponential", "Quadratic"]) {
     for (let stepIndex = 0; stepIndex < 6; stepIndex++) {
       for (const answered of [false, true]) {
         click(from);
@@ -121,7 +139,7 @@ if (query.includes("dev=1")) {
         errors.length = 0;
         try { click("Quadratic"); } catch (e) { errors.push("click threw: " + e.stack); }
         await new Promise((r) => setTimeout(r, 5));
-        const okPage = state.concept.id === "quadratic" && hidden("flow") && !hidden("table") && !hidden("graph") && $$("#table tbody tr").length > 0;
+        const okPage = state.concept.id === "quadratic" && state.flowRun && state.step === 0 && !hidden("flow") && !!$("#scenario h2");
         if (errors.length || !okPage) {
           failures++;
           report(`${from} step ${stepIndex}${answered ? " (answered)" : ""} -> Quadratic${okPage ? "" : " [page wrong]"}`);

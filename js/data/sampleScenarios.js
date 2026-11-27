@@ -16,6 +16,10 @@
   code, so the answer is never already in the student's table. Falling (decrease)
   linear stories also have a reverseQuestion with {target} ("when will it reach …?"),
   which the flow asks instead; the target is also picked in code.
+
+  Quadratic scenarios have a guidedStory for the guided flow: it leaves out "back at
+  the start after 2h", which the student finds from symmetry. returnQuestion and
+  reverseQuestion ({target}) are the Solve questions; the flow picks which and the target.
 */
 
 export const sampleScenarios = {
@@ -166,6 +170,9 @@ export const sampleScenarios = {
       max: {
         title: "The Big Punt",
         story: "A football is punted from \\({yStart}\\) feet off the ground. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) seconds, and is back at \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, the ball is \\(y\\) feet high.",
+        guidedStory: "A football is punted from \\({yStart}\\) feet off the ground. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) seconds. After \\(x\\) seconds, the ball is \\(y\\) feet high.",
+        returnQuestion: "When is the ball back at the height it was kicked from?",
+        reverseQuestion: "After its highest point, when is the ball {target} feet high?",
         question: "How high is the ball after 1 second?",
         labels: { x: "Seconds since kick", y: "Height (feet)" },
         units: { x: "seconds", y: "feet" },
@@ -173,6 +180,9 @@ export const sampleScenarios = {
       min: {
         title: "Halfpipe Run",
         story: "A skater drops in from \\({yStart}\\) feet up a halfpipe. They reach the lowest point, \\({k}\\) feet, after \\({h}\\) seconds, and are back at \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, the skater is \\(y\\) feet high.",
+        guidedStory: "A skater drops in from \\({yStart}\\) feet up a halfpipe. They reach the lowest point, \\({k}\\) feet, after \\({h}\\) seconds. After \\(x\\) seconds, the skater is \\(y\\) feet high.",
+        returnQuestion: "When is the skater back at the height they dropped in from?",
+        reverseQuestion: "After the lowest point, when is the skater {target} feet high?",
         question: "How high is the skater after 1 second?",
         labels: { x: "Seconds", y: "Height (feet)" },
         units: { x: "seconds", y: "feet" },
@@ -183,6 +193,9 @@ export const sampleScenarios = {
       max: {
         title: "Encore Cheer",
         story: "During the encore, the crowd's cheer starts at \\({yStart}\\) decibels above normal, peaks at \\({k}\\) after \\({h}\\) minutes, and fades back to \\({yStart}\\) after \\({xEnd}\\) minutes. After \\(x\\) minutes, it is \\(y\\) decibels above normal.",
+        guidedStory: "During the encore, the crowd's cheer starts at \\({yStart}\\) decibels above normal and peaks at \\({k}\\) after \\({h}\\) minutes. After \\(x\\) minutes, it is \\(y\\) decibels above normal.",
+        returnQuestion: "When is the cheer back to where it started?",
+        reverseQuestion: "After the peak, when is the cheer {target} decibels above normal?",
         question: "How loud is the cheer after 1 minute?",
         labels: { x: "Minutes into encore", y: "Decibels above normal" },
         units: { x: "minutes", y: "decibels" },
@@ -190,6 +203,9 @@ export const sampleScenarios = {
       min: {
         title: "The Drop",
         story: "A DJ starts a song at volume \\({yStart}\\), lowers it to \\({k}\\) at second \\({h}\\), then brings it back to \\({yStart}\\) by second \\({xEnd}\\). After \\(x\\) seconds, the volume is \\(y\\).",
+        guidedStory: "A DJ starts a song at volume \\({yStart}\\) and lowers it to \\({k}\\) at second \\({h}\\), then brings it back up. After \\(x\\) seconds, the volume is \\(y\\).",
+        returnQuestion: "When is the volume back to where it started?",
+        reverseQuestion: "After the lowest point, when is the volume {target}?",
         question: "What is the volume after 1 second?",
         labels: { x: "Seconds", y: "Volume" },
         units: { x: "seconds", y: "volume units" },
@@ -200,6 +216,9 @@ export const sampleScenarios = {
       max: {
         title: "Ledge Jump",
         story: "Your character jumps from a ledge \\({yStart}\\) blocks high. They reach their highest point, \\({k}\\) blocks, after \\({h}\\) ticks, and land on a matching ledge after \\({xEnd}\\) ticks. After \\(x\\) ticks, the character is \\(y\\) blocks high.",
+        guidedStory: "Your character jumps from a ledge \\({yStart}\\) blocks high. They reach their highest point, \\({k}\\) blocks, after \\({h}\\) ticks, then come down onto a matching ledge. After \\(x\\) ticks, the character is \\(y\\) blocks high.",
+        returnQuestion: "When does the character land on the matching ledge, back at the starting height?",
+        reverseQuestion: "After the highest point, when is the character {target} blocks high?",
         question: "How high is the character after 1 tick?",
         labels: { x: "Ticks since jump", y: "Height (blocks)" },
         units: { x: "ticks", y: "blocks" },
@@ -207,6 +226,9 @@ export const sampleScenarios = {
       min: {
         title: "Minecart Dip",
         story: "Your minecart starts \\({yStart}\\) blocks high, dips to its lowest point, \\({k}\\) blocks, after \\({h}\\) seconds, and climbs back to \\({yStart}\\) blocks after \\({xEnd}\\) seconds. After \\(x\\) seconds, it is \\(y\\) blocks high.",
+        guidedStory: "Your minecart starts \\({yStart}\\) blocks high and dips to its lowest point, \\({k}\\) blocks, after \\({h}\\) seconds, then climbs back up. After \\(x\\) seconds, it is \\(y\\) blocks high.",
+        returnQuestion: "When is the minecart back at its starting height?",
+        reverseQuestion: "After the lowest point, when is the minecart {target} blocks high?",
         question: "How high is the minecart after 1 second?",
         labels: { x: "Seconds", y: "Height (blocks)" },
         units: { x: "seconds", y: "blocks" },
@@ -217,6 +239,9 @@ export const sampleScenarios = {
       max: {
         title: "Dolphin Leap",
         story: "A dolphin leaps from \\({yStart}\\) feet above the water line. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) tenths of a second, and is back at \\({yStart}\\) feet after \\({xEnd}\\). After \\(x\\) tenths of a second, it is \\(y\\) feet high.",
+        guidedStory: "A dolphin leaps from \\({yStart}\\) feet above the water line. It reaches its highest point, \\({k}\\) feet, after \\({h}\\) tenths of a second. After \\(x\\) tenths of a second, it is \\(y\\) feet high.",
+        returnQuestion: "When is the dolphin back at its starting height?",
+        reverseQuestion: "After its highest point, when is the dolphin {target} feet high?",
         question: "How high is the dolphin after 1 tenth of a second?",
         labels: { x: "Tenths of a second", y: "Height (feet)" },
         units: { x: "tenths of a second", y: "feet" },
@@ -224,6 +249,9 @@ export const sampleScenarios = {
       min: {
         title: "Pelican Dive",
         story: "A pelican flies \\({yStart}\\) feet above the water, swoops down to its lowest point, \\({k}\\) feet, after \\({h}\\) seconds, and climbs back to \\({yStart}\\) feet after \\({xEnd}\\) seconds. After \\(x\\) seconds, it is \\(y\\) feet high.",
+        guidedStory: "A pelican flies \\({yStart}\\) feet above the water and swoops down to its lowest point, \\({k}\\) feet, after \\({h}\\) seconds, then climbs back up. After \\(x\\) seconds, it is \\(y\\) feet high.",
+        returnQuestion: "When is the pelican back at its starting height?",
+        reverseQuestion: "After the lowest point, when is the pelican {target} feet high?",
         question: "How high is the pelican after 1 second?",
         labels: { x: "Seconds", y: "Height (feet)" },
         units: { x: "seconds", y: "feet" },
