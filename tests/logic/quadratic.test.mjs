@@ -84,7 +84,7 @@ for (let n = 0; n < RUNS; n++) {
     ok(solve.answer > h + 1 && solve.answer < 2 * h, "target: after the turning point, not in the table");
     ok(solve.hints.every((t) => typeof t !== "string" || !badWording.test(t)), "sign-aware solve hints");
   }
-  if (h === 2) ok(kind === "return", "h = 2: no whole target besides the start");
+  ok(kind === (h === 2 ? "return" : "target"), `h = ${h}: ${h === 2 ? "back at the start" : "target"} question (got ${kind})`);
   ok(!solve.prompt.includes("{"), `filled prompt: ${solve.prompt}`);
   solveKinds[kind] = (solveKinds[kind] ?? 0) + 1;
   const read = items["solve-read"];

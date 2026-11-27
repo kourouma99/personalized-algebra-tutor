@@ -16,8 +16,9 @@
     2. Notice    — x = h-1 and h+1 given; fill in x = h, 0 and 2h; then "where is the
                    highest/lowest point?" (h, k). Hints point out the symmetry.
     3. Represent — type y = [ ](x - [ ])^2 + [ ], then pick its graph from 4
-    4. Solve     — "when is it back at the start?" (2h) or "after the turning point, when is
-                   it at [target]?" (a whole x), then the zoomed-in graph-reading question
+    4. Solve     — "after the turning point, when is it at [target]?" (a whole x); only when
+                   h = 2 (no such target) "when is it back at the start?" (2h). Then the
+                   zoomed-in graph-reading question
     5. Explain   — what do h and k mean in the story?
     6. Transfer  — f(x) in vertex form: f(0), f(h + 2), f(h - 2), and why the last two are equal
 
@@ -258,10 +259,11 @@ export default {
     };
 
     // ---- 4. Solve: a reverse question (solve for x), then read the graph ----
-    // "back at the start" (x = 2h), or "after the turning point, when is it at T?" with
-    // x = h + d for a whole d from 2 to h - 1 (h + 1 is already in the table).
+    // "After the turning point, when is it at T?" with x = h + d for a whole d from 2 to
+    // h - 1 (h + 1 is already in the table). That needs h >= 3; when h = 2 there is no
+    // such d, so ask "when is it back at the start?" (x = 2h) instead.
     const targetDs = range(2, h - 1);
-    const solveQuestion = targetDs.length && rng() < 0.5 ? "target" : "return";
+    const solveQuestion = targetDs.length ? "target" : "return";
     const values = { ...(context.values ?? params) };
     let solveItem;
     if (solveQuestion === "return") {
